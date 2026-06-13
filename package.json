@@ -1,0 +1,30 @@
+{
+  "name": "agent-atlas",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Discovery, benchmarking, and hiring network for AI agents on Mantle.",
+  "workspaces": [
+    "backend",
+    "indexer",
+    "frontend",
+    "contracts",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "demo": "node scripts/demo.js",
+    "dev:backend": "npm --workspace backend run dev",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "dev:indexer": "npm --workspace indexer run dev",
+    "contracts:compile": "npm --workspace contracts run compile",
+    "contracts:test": "npm --workspace contracts run test",
+    "rebuild:indexer": "node scripts/rebuild-indexer.js",
+    "chain:evidence": "node scripts/chain-evidence.js",
+    "deployment:check": "node scripts/deployment-consistency.js",
+    "integrity:check": "node scripts/system-integrity-check.js",
+    "seed": "node scripts/seed-demo.js"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "network": "mantleSepolia",
+  "chainId": 5003,
+  "rpcUrl": "https://rpc.sepolia.mantle.xyz",
+  "explorer": "https://sepolia.mantlescan.xyz",
+  "deployment": {
+    "AgentRegistry": {
+      "address": "0x3cf0763443C8Ab7672f51B8e1B34956786522a0e",
+      "explorerUrl": "https://sepolia.mantlescan.xyz/address/0x3cf0763443C8Ab7672f51B8e1B34956786522a0e",
+      "deploymentTx": {
+        "hash": "0x2185cfa9b042690b29896dc6ada0c9652972ce2d5dd537f53dbcbe04cb9df264",
+        "blockNumber": 39908017,
+        "timestamp": "2026-06-13T14:25:07.000Z",
+        "explorerUrl": "https://sepolia.mantlescan.xyz/tx/0x2185cfa9b042690b29896dc6ada0c9652972ce2d5dd537f53dbcbe04cb9df264"
+      }
+    },
+    "JobManager": {
+      "address": "0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+      "explorerUrl": "https://sepolia.mantlescan.xyz/address/0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+      "deploymentTx": {
+        "hash": "0x0b6747b819bd48bfb990723779819708357705d35abe8b5f469bbc8a5cabaf7f",
+        "blockNumber": 39908021,
+        "timestamp": "2026-06-13T14:25:15.000Z",
+        "explorerUrl": "https://sepolia.mantlescan.xyz/tx/0x0b6747b819bd48bfb990723779819708357705d35abe8b5f469bbc8a5cabaf7f"
+      }
+    },
+    "AtlasScore": {
+      "address": "0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB",
+      "explorerUrl": "https://sepolia.mantlescan.xyz/address/0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB",
+      "deploymentTx": {
+        "hash": "0x742ba6e20c339a17a4c654c641669e95691045bb0fb5de72d963c2e56cd2cd56",
+        "blockNumber": 39908026,
+        "timestamp": "2026-06-13T14:25:25.000Z",
+        "explorerUrl": "https://sepolia.mantlescan.xyz/tx/0x742ba6e20c339a17a4c654c641669e95691045bb0fb5de72d963c2e56cd2cd56"
+      }
+    },
+    "ProofVerifier": {
+      "address": "0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565",
+      "explorerUrl": "https://sepolia.mantlescan.xyz/address/0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565",
+      "deploymentTx": {
+        "hash": "0x3b1e424466fb197447b1dbf22c69e5a0c1ef0a455a01e1bfe2a3f7f6a7dabc45",
+        "blockNumber": 39908031,
+        "timestamp": "2026-06-13T14:25:35.000Z",
+        "explorerUrl": "https://sepolia.mantlescan.xyz/tx/0x3b1e424466fb197447b1dbf22c69e5a0c1ef0a455a01e1bfe2a3f7f6a7dabc45"
+      }
+    }
+  },
+  "runtime": {
+    "CHAIN_MODE": "chain",
+    "DEMO_MODE": "false",
+    "DEMO_DAY": "false",
+    "AGENT_REGISTRY_ADDRESS": "0x3cf0763443C8Ab7672f51B8e1B34956786522a0e",
+    "JOB_MANAGER_ADDRESS": "0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+    "PROOF_VERIFIER_ADDRESS": "0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565",
+    "ATLAS_SCORE_ADDRESS": "0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB"
+  },
+  "lifecycle": {
+    "agentCreated": {
+      "chainMode": true,
+      "onChainAgentId": 1,
+      "transactionHash": "0x7e0f3533ef8d5a42bb1d4e33a3788837e4bd05bfc9a55ada76d1a74c9b5ab243",
+      "transactionUrl": "https://sepolia.mantlescan.xyz/tx/0x7e0f3533ef8d5a42bb1d4e33a3788837e4bd05bfc9a55ada76d1a74c9b5ab243",
+      "contractAddress": "0x3cf0763443C8Ab7672f51B8e1B34956786522a0e",
+      "contractUrl": "https://sepolia.mantlescan.xyz/address/0x3cf0763443C8Ab7672f51B8e1B34956786522a0e",
+      "blockNumber": 39908498,
+      "emittedEvents": [
+        "AgentRegistered"
+      ]
+    },
+    "jobCreated": {
+      "chainMode": true,
+      "onChainJobId": 1,
+      "transactionHash": "0xb9ce02482cbb4ba48388029202710481819282bd6e12a2ccbb2d16608776f5da",
+      "transactionUrl": "https://sepolia.mantlescan.xyz/tx/0xb9ce02482cbb4ba48388029202710481819282bd6e12a2ccbb2d16608776f5da",
+      "contractAddress": "0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+      "contractUrl": "https://sepolia.mantlescan.xyz/address/0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+      "blockNumber": 39908502
+    },
+    "jobAccepted": {
+      "chainMode": true,
+      "onChainAgentId": 1,
+      "transactionHash": "0xf0b2529f1cc18a37bf28c9e4552b9a6af0acf2ba34fab6dfc7f839bb5888bf52",
+      "transactionUrl": "https://sepolia.mantlescan.xyz/tx/0xf0b2529f1cc18a37bf28c9e4552b9a6af0acf2ba34fab6dfc7f839bb5888bf52",
+      "contractAddress": "0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+      "contractUrl": "https://sepolia.mantlescan.xyz/address/0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+      "blockNumber": 39908507
+    },
+    "proofHash": "0xd2fd82ee4bd4ca5a12d4ace71a350ceb500c86189e89cf94c05aad634595b4ee",
+    "proofSubmitted": {
+      "chainMode": true,
+      "transactionHash": "0xf6bd84236902a7902de763fb7ed760e75654aa995eadc64e5e758698d9a3eb93",
+      "transactionUrl": "https://sepolia.mantlescan.xyz/tx/0xf6bd84236902a7902de763fb7ed760e75654aa995eadc64e5e758698d9a3eb93",
+      "contractAddress": "0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565",
+      "contractUrl": "https://sepolia.mantlescan.xyz/address/0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565",
+      "blockNumber": 39908512,
+      "events": {
+        "ProofSubmitted": true
+      },
+      "emittedEvents": [
+        {
+          "name": "ProofSubmitted",
+          "args": {
+            "jobId": 1,
+            "agentId": 1,
+            "resultHash": "0xd2fd82ee4bd4ca5a12d4ace71a350ceb500c86189e89cf94c05aad634595b4ee"
+          }
+        }
+      ]
+    },
+    "proofVerified": {
+      "chainMode": true,
+      "transactionHash": "0xcb6f0d468441ae3e1e7c8bf53aa8752ad2cffd7d3018272bf6cdbcdc2e99a4d0",
+      "transactionUrl": "https://sepolia.mantlescan.xyz/tx/0xcb6f0d468441ae3e1e7c8bf53aa8752ad2cffd7d3018272bf6cdbcdc2e99a4d0",
+      "contractAddress": "0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565",
+      "contractUrl": "https://sepolia.mantlescan.xyz/address/0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565",
+      "blockNumber": 39908517,
+      "events": {
+        "ProofVerified": true,
+        "ScoreUpdated": true
+      },
+      "emittedEvents": [
+        {
+          "name": "ProofVerified",
+          "args": {
+            "jobId": 1,
+            "agentId": 1,
+            "resultHash": "0xd2fd82ee4bd4ca5a12d4ace71a350ceb500c86189e89cf94c05aad634595b4ee"
+          }
+        },
+        {
+          "name": "ScoreUpdated",
+          "args": {
+            "agentId": 1,
+            "successCount": 1,
+            "failureCount": 0,
+            "taskVolume": 1,
+            "reliabilityScore": 80,
+            "jobId": 1
+          }
+        }
+      ]
+    }
+  },
+  "resultingScoreState": {
+    "agentId": 1,
+    "successCount": 1,
+    "failureCount": 0,
+    "taskVolume": 1,
+    "reliabilityScore": 80
+  },
+  "transactionEvidence": {
+    "agentCreated": {
+      "hash": "0x7e0f3533ef8d5a42bb1d4e33a3788837e4bd05bfc9a55ada76d1a74c9b5ab243",
+      "blockNumber": 39908498,
+      "timestamp": "2026-06-13T14:41:09.000Z",
+      "explorerUrl": "https://sepolia.mantlescan.xyz/tx/0x7e0f3533ef8d5a42bb1d4e33a3788837e4bd05bfc9a55ada76d1a74c9b5ab243"
+    },
+    "jobCreated": {
+      "hash": "0xb9ce02482cbb4ba48388029202710481819282bd6e12a2ccbb2d16608776f5da",
+      "blockNumber": 39908502,
+      "timestamp": "2026-06-13T14:41:17.000Z",
+      "explorerUrl": "https://sepolia.mantlescan.xyz/tx/0xb9ce02482cbb4ba48388029202710481819282bd6e12a2ccbb2d16608776f5da"
+    },
+    "jobAccepted": {
+      "hash": "0xf0b2529f1cc18a37bf28c9e4552b9a6af0acf2ba34fab6dfc7f839bb5888bf52",
+      "blockNumber": 39908507,
+      "timestamp": "2026-06-13T14:41:27.000Z",
+      "explorerUrl": "https://sepolia.mantlescan.xyz/tx/0xf0b2529f1cc18a37bf28c9e4552b9a6af0acf2ba34fab6dfc7f839bb5888bf52"
+    },
+    "proofSubmitted": {
+      "hash": "0xf6bd84236902a7902de763fb7ed760e75654aa995eadc64e5e758698d9a3eb93",
+      "blockNumber": 39908512,
+      "timestamp": "2026-06-13T14:41:37.000Z",
+      "explorerUrl": "https://sepolia.mantlescan.xyz/tx/0xf6bd84236902a7902de763fb7ed760e75654aa995eadc64e5e758698d9a3eb93"
+    },
+    "proofVerified": {
+      "hash": "0xcb6f0d468441ae3e1e7c8bf53aa8752ad2cffd7d3018272bf6cdbcdc2e99a4d0",
+      "blockNumber": 39908517,
+      "timestamp": "2026-06-13T14:41:47.000Z",
+      "explorerUrl": "https://sepolia.mantlescan.xyz/tx/0xcb6f0d468441ae3e1e7c8bf53aa8752ad2cffd7d3018272bf6cdbcdc2e99a4d0"
+    }
+  }
+}

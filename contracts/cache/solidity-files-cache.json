@@ -1,0 +1,153 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "C:\\Users\\USER\\Desktop\\Agent Atlas\\agent-atlas\\contracts\\contracts\\AgentRegistry.sol": {
+      "lastModificationDate": 1781302889817,
+      "contentHash": "ac4452cffd79202d2c0b790c8c2a581e",
+      "sourceName": "contracts/AgentRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AgentRegistry"
+      ]
+    },
+    "C:\\Users\\USER\\Desktop\\Agent Atlas\\agent-atlas\\contracts\\contracts\\AtlasScore.sol": {
+      "lastModificationDate": 1781302978809,
+      "contentHash": "6e6fa8f60cf04e744611b3795fbb04fe",
+      "sourceName": "contracts/AtlasScore.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AtlasScore"
+      ]
+    },
+    "C:\\Users\\USER\\Desktop\\Agent Atlas\\agent-atlas\\contracts\\contracts\\JobManager.sol": {
+      "lastModificationDate": 1781302926821,
+      "contentHash": "2ebcfa3d2841785059799d1d42af58a9",
+      "sourceName": "contracts/JobManager.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IAgentRegistry",
+        "JobManager"
+      ]
+    },
+    "C:\\Users\\USER\\Desktop\\Agent Atlas\\agent-atlas\\contracts\\contracts\\ProofVerifier.sol": {
+      "lastModificationDate": 1781351285973,
+      "contentHash": "a044e88625356f67ea81abf513bae9ab",
+      "sourceName": "contracts/ProofVerifier.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IAgentRegistryForProofs",
+        "IAtlasScore",
+        "IJobManager",
+        "ProofVerifier"
+      ]
+    }
+  }
+}

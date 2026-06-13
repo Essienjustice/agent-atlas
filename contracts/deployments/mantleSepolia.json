@@ -1,0 +1,34 @@
+{
+  "network": "mantleSepolia",
+  "chainId": 5003,
+  "deployedAt": "2026-06-13T14:25:48.123Z",
+  "seedOnDeploy": false,
+  "contracts": {
+    "AgentRegistry": {
+      "address": "0x3cf0763443C8Ab7672f51B8e1B34956786522a0e",
+      "deploymentTxHash": "0x2185cfa9b042690b29896dc6ada0c9652972ce2d5dd537f53dbcbe04cb9df264",
+      "constructorArgs": []
+    },
+    "JobManager": {
+      "address": "0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+      "deploymentTxHash": "0x0b6747b819bd48bfb990723779819708357705d35abe8b5f469bbc8a5cabaf7f",
+      "constructorArgs": [
+        "0x3cf0763443C8Ab7672f51B8e1B34956786522a0e"
+      ]
+    },
+    "AtlasScore": {
+      "address": "0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB",
+      "deploymentTxHash": "0x742ba6e20c339a17a4c654c641669e95691045bb0fb5de72d963c2e56cd2cd56",
+      "constructorArgs": []
+    },
+    "ProofVerifier": {
+      "address": "0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565",
+      "deploymentTxHash": "0x3b1e424466fb197447b1dbf22c69e5a0c1ef0a455a01e1bfe2a3f7f6a7dabc45",
+      "constructorArgs": [
+        "0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+        "0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB",
+        "0x3cf0763443C8Ab7672f51B8e1B34956786522a0e"
+      ]
+    }
+  }
+}

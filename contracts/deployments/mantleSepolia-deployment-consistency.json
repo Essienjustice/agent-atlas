@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-06-13T14:39:18.103Z",
+  "network": "mantleSepolia",
+  "chainId": 5003,
+  "bytecode": {
+    "AgentRegistry": {
+      "address": "0x3cf0763443C8Ab7672f51B8e1B34956786522a0e",
+      "matchesArtifact": true,
+      "hasBytecode": true,
+      "bytecodeLength": 9232
+    },
+    "JobManager": {
+      "address": "0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb",
+      "matchesArtifact": true,
+      "hasBytecode": true,
+      "bytecodeLength": 17942
+    },
+    "ProofVerifier": {
+      "address": "0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565",
+      "matchesArtifact": true,
+      "hasBytecode": true,
+      "bytecodeLength": 14208
+    },
+    "AtlasScore": {
+      "address": "0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB",
+      "matchesArtifact": true,
+      "hasBytecode": true,
+      "bytecodeLength": 7798
+    }
+  },
+  "constants": {
+    "registrationStakeWei": {
+      "ok": true,
+      "value": "10000000000000000"
+    },
+    "registrationStakePass": true,
+    "jobBondWei": {
+      "ok": true,
+      "value": "5000000000000000"
+    },
+    "jobBondPass": true,
+    "maxPositiveCreditPerPair": {
+      "ok": true,
+      "value": "3"
+    },
+    "pairCapPass": true
+  },
+  "abiCompatibility": {
+    "registerAgent": true,
+    "acceptJob": true,
+    "submitProof": true,
+    "acceptProof": true,
+    "recordVerifiedProof": true
+  },
+  "status": {
+    "deploymentAddressesMatchArtifacts": true,
+    "allContractsHaveBytecode": true,
+    "requiredInterfacesPresent": true,
+    "liveConstantsMatchSubmittedSource": true
+  }
+}

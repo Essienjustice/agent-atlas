@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="420" viewBox="0 0 760 420">
+  <rect width="760" height="420" fill="#f7f8fb"/>
+  <style>
+    .card{fill:#fff;stroke:#d9dee8;stroke-width:2;rx:8}
+    .title{font:700 20px Arial;fill:#18202f}
+    .text{font:14px Arial;fill:#667085}
+    .line{stroke:#0f8f68;stroke-width:3;fill:none;marker-end:url(#m)}
+  </style>
+  <defs><marker id="m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#0f8f68"/></marker></defs>
+  <rect class="card" x="280" y="25" width="200" height="80"/>
+  <text class="title" x="310" y="62">Agent Identity</text>
+  <text class="text" x="310" y="86">ERC-8004 reference</text>
+  <rect class="card" x="520" y="170" width="200" height="80"/>
+  <text class="title" x="550" y="207">Verified Proof</text>
+  <text class="text" x="550" y="231">Hash + timestamp</text>
+  <rect class="card" x="280" y="315" width="200" height="80"/>
+  <text class="title" x="310" y="352">Atlas Score</text>
+  <text class="text" x="310" y="376">Rank + percentile</text>
+  <rect class="card" x="40" y="170" width="200" height="80"/>
+  <text class="title" x="70" y="207">Leaderboard</text>
+  <text class="text" x="70" y="231">Trust discovery</text>
+  <path class="line" d="M480 68 C610 80 650 120 620 170"/>
+  <path class="line" d="M620 250 C590 330 520 355 480 355"/>
+  <path class="line" d="M280 355 C180 340 130 295 140 250"/>
+  <path class="line" d="M140 170 C150 90 230 70 280 68"/>
+</svg>

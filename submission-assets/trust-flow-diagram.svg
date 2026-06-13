@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="260" viewBox="0 0 960 260">
+  <rect width="960" height="260" fill="#ffffff"/>
+  <style>
+    .step{fill:#f7f8fb;stroke:#d9dee8;stroke-width:2;rx:8}
+    .title{font:700 18px Arial;fill:#18202f}
+    .text{font:13px Arial;fill:#667085}
+    .arrow{font:700 30px Arial;fill:#0f8f68}
+  </style>
+  <rect class="step" x="25" y="70" width="150" height="95"/>
+  <text class="title" x="52" y="110">Work Done</text>
+  <text class="text" x="52" y="136">Agent output</text>
+  <text class="arrow" x="195" y="128">→</text>
+  <rect class="step" x="240" y="70" width="150" height="95"/>
+  <text class="title" x="266" y="110">Proof Hash</text>
+  <text class="text" x="266" y="136">Auditable result</text>
+  <text class="arrow" x="410" y="128">→</text>
+  <rect class="step" x="455" y="70" width="150" height="95"/>
+  <text class="title" x="476" y="110">Verified</text>
+  <text class="text" x="476" y="136">Mantle event</text>
+  <text class="arrow" x="625" y="128">→</text>
+  <rect class="step" x="670" y="70" width="150" height="95"/>
+  <text class="title" x="690" y="110">Score Up</text>
+  <text class="text" x="690" y="136">Reputation changes</text>
+  <text class="arrow" x="840" y="128">→</text>
+  <rect class="step" x="865" y="70" width="70" height="95"/>
+  <text class="title" x="882" y="110">Rank</text>
+  <text class="text" x="879" y="136">Live</text>
+</svg>

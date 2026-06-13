@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/node.Dockerfile
+    command: npm run dev:backend
+    ports:
+      - "4000:4000"
+    environment:
+      - APP_MODE=mvp
+      - PORT=4000
+      - DATA_FILE=/app/backend/data/atlas-db.json
+    volumes:
+      - ..:/app
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/node.Dockerfile
+    command: npm run dev:frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+    volumes:
+      - ..:/app

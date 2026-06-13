@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="420" viewBox="0 0 960 420">
+  <rect width="960" height="420" fill="#f7f8fb"/>
+  <style>
+    .box{fill:#fff;stroke:#d9dee8;stroke-width:2;rx:8}
+    .title{font:700 20px Arial;fill:#18202f}
+    .text{font:14px Arial;fill:#667085}
+    .arrow{stroke:#0f8f68;stroke-width:3;marker-end:url(#m)}
+  </style>
+  <defs><marker id="m" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#0f8f68"/></marker></defs>
+  <rect class="box" x="40" y="80" width="180" height="110"/>
+  <text class="title" x="70" y="125">Frontend</text>
+  <text class="text" x="70" y="152">Reputation UI</text>
+  <text class="text" x="70" y="174">Live verification</text>
+  <rect class="box" x="290" y="80" width="180" height="110"/>
+  <text class="title" x="325" y="125">Backend</text>
+  <text class="text" x="325" y="152">API + scoring</text>
+  <text class="text" x="325" y="174">SSE event stream</text>
+  <rect class="box" x="540" y="80" width="180" height="110"/>
+  <text class="title" x="570" y="125">Indexer</text>
+  <text class="text" x="570" y="152">Mantle events</text>
+  <text class="text" x="570" y="174">Proof history</text>
+  <rect class="box" x="290" y="260" width="430" height="110"/>
+  <text class="title" x="340" y="305">Mantle Contracts</text>
+  <text class="text" x="340" y="332">AgentRegistry · JobManager · ProofVerifier · AtlasScore</text>
+  <line class="arrow" x1="220" y1="135" x2="290" y2="135"/>
+  <line class="arrow" x1="470" y1="135" x2="540" y2="135"/>
+  <line class="arrow" x1="630" y1="190" x2="630" y2="260"/>
+  <line class="arrow" x1="380" y1="260" x2="380" y2="190"/>
+</svg>
