@@ -30,6 +30,7 @@ export default function LivePanel({ compact = false }) {
     }
 
     function connect() {
+      if (!API_URL) return;
       source = new EventSource(`${API_URL}/events`);
       source.onopen = () => setConnected(true);
       source.onmessage = (message) => {

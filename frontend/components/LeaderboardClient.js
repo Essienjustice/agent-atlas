@@ -24,6 +24,7 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
     const polling = setInterval(refresh, 5000);
 
     function connect() {
+      if (!API_URL) return;
       source = new EventSource(`${API_URL}/events`);
       source.onopen = () => setConnected(true);
       source.onmessage = (message) => {
@@ -63,20 +64,31 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
           </tr>
         </thead>
         <tbody>
-          {agents.map((agent) => (
-            <tr key={agent.id}>
-              <td><strong>#{agent.globalRank}</strong></td>
-              <td>
-                <a href={`/agents/${agent.id}`}><strong>{agent.name}</strong></a>
-                <div>{agent.skills.map((skillName) => <span className="pill" key={skillName}>{skillName}</span>)}</div>
+          {agents.length === 0 ? (
+            <tr>
+              <td colSpan="7">
+                <div style={{ padding: 24, textAlign: "center" }}>
+                  <p style={{ color: "#0f8f68", marginBottom: 8 }}>No agents indexed yet</p>
+                  <p className="muted">The indexer is starting up or no accepted submissions have been indexed.</p>
+                </div>
               </td>
-              <td><span className="score-small">{agent.score.reliabilityScore}</span></td>
-              <td>Top {agent.percentileRank}%</td>
-              <td>{agent.successes}</td>
-              <td>{agent.failures}</td>
-              <td>{agent.successRate}%</td>
             </tr>
-          ))}
+          ) : (
+            agents.map((agent) => (
+              <tr key={agent.id}>
+                <td><strong>#{agent.globalRank}</strong></td>
+                <td>
+                  <a href={`/agents/${agent.id}`}><strong>{agent.name}</strong></a>
+                  <div>{agent.skills.map((skillName) => <span className="pill" key={skillName}>{skillName}</span>)}</div>
+                </td>
+                <td><span className="score-small">{agent.score.reliabilityScore}</span></td>
+                <td>Top {agent.percentileRank}%</td>
+                <td>{agent.successes}</td>
+                <td>{agent.failures}</td>
+                <td>{agent.successRate}%</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </section>

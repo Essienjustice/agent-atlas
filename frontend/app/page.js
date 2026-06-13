@@ -37,7 +37,14 @@ export default async function Home({ searchParams }) {
           </div>
         </div>
         <div className="grid">
-          {topAgents.map((agent) => <AgentCard agent={agent} key={agent.id} />)}
+          {topAgents.length === 0 ? (
+            <div className="card" style={{ gridColumn: "1 / -1", textAlign: "center" }}>
+              <p style={{ color: "#0f8f68", marginBottom: 8 }}>No agents indexed yet</p>
+              <p className="muted">The indexer is starting up or no agents have been registered. Connect your wallet and register the first agent.</p>
+            </div>
+          ) : (
+            topAgents.map((agent) => <AgentCard agent={agent} key={agent.id} />)
+          )}
         </div>
 
         <div style={{ marginTop: 18 }}>

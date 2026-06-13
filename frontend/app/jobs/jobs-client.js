@@ -180,33 +180,44 @@ export default function JobsClient({ initialJobs, agents }) {
           {waitingForIndex && <p className="muted">Waiting for indexed confirmation...</p>}
           <table className="table">
             <tbody>
-              {jobs.map((job) => (
-                <tr key={job.id}>
-                  <td>
-                    <strong>{job.description}</strong>
-                    <div className="muted">{job.reward} MNT</div>
-                  </td>
-                  <td><span className={`status ${job.status}`}>{job.status}</span></td>
-                  <td>
-                    {job.status === "OPEN" && (
-                      <button className="button secondary" disabled={ownerActionDisabled} title={ownsSelectedAgent ? "Accept with selected agent owner wallet" : "Connect the selected agent owner wallet"} onClick={() => acceptJob(job.id)}><Play size={16} />Assign Agent</button>
-                    )}
-                    {job.status === "ASSIGNED" && (
-                      <div className="toolbar">
-                        <button className="button success" disabled={busy || !ownsAgent(job.assignedAgentId)} title={ownsAgent(job.assignedAgentId) ? "Submit with assigned agent owner wallet" : "Connect the assigned agent owner wallet"} onClick={() => submitProof(job.id)}><Upload size={16} />Submit Proof</button>
-                        {job.hasSubmittedProof ? (
-                          <button className="button success" disabled={busy || !isJobCreator(job)} title={isJobCreator(job) ? "Accept with job creator wallet" : "Connect the job creator wallet"} onClick={() => acceptProof(job.id)}><CheckCircle size={16} />Accept Submission</button>
-                        ) : (
-                          <span className="muted">Awaiting proof submission</span>
-                        )}
-                        <button className="button secondary" disabled={busy || !job.hasSubmittedProof || !isJobCreator(job)} title={!job.hasSubmittedProof ? "Proof submission required before failure" : isJobCreator(job) ? "Mark failed with job creator wallet" : "Connect the job creator wallet"} onClick={() => markFailed(job.id)}><XCircle size={16} />Mark Failed</button>
-                      </div>
-                    )}
-                    {job.status === "COMPLETED" && <CheckCircle color="#0f8f68" />}
-                    {job.status === "FAILED" && <XCircle color="#b42318" />}
+              {jobs.length === 0 ? (
+                <tr>
+                  <td colSpan="3">
+                    <div style={{ padding: 24, textAlign: "center" }}>
+                      <p style={{ color: "#0f8f68", marginBottom: 8 }}>No jobs indexed yet</p>
+                      <p className="muted">The indexer is starting up or no jobs have been created. Connect your wallet and post the first job.</p>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                jobs.map((job) => (
+                  <tr key={job.id}>
+                    <td>
+                      <strong>{job.description}</strong>
+                      <div className="muted">{job.reward} MNT</div>
+                    </td>
+                    <td><span className={`status ${job.status}`}>{job.status}</span></td>
+                    <td>
+                      {job.status === "OPEN" && (
+                        <button className="button secondary" disabled={ownerActionDisabled} title={ownsSelectedAgent ? "Accept with selected agent owner wallet" : "Connect the selected agent owner wallet"} onClick={() => acceptJob(job.id)}><Play size={16} />Assign Agent</button>
+                      )}
+                      {job.status === "ASSIGNED" && (
+                        <div className="toolbar">
+                          <button className="button success" disabled={busy || !ownsAgent(job.assignedAgentId)} title={ownsAgent(job.assignedAgentId) ? "Submit with assigned agent owner wallet" : "Connect the assigned agent owner wallet"} onClick={() => submitProof(job.id)}><Upload size={16} />Submit Proof</button>
+                          {job.hasSubmittedProof ? (
+                            <button className="button success" disabled={busy || !isJobCreator(job)} title={isJobCreator(job) ? "Accept with job creator wallet" : "Connect the job creator wallet"} onClick={() => acceptProof(job.id)}><CheckCircle size={16} />Accept Submission</button>
+                          ) : (
+                            <span className="muted">Awaiting proof submission</span>
+                          )}
+                          <button className="button secondary" disabled={busy || !job.hasSubmittedProof || !isJobCreator(job)} title={!job.hasSubmittedProof ? "Proof submission required before failure" : isJobCreator(job) ? "Mark failed with job creator wallet" : "Connect the job creator wallet"} onClick={() => markFailed(job.id)}><XCircle size={16} />Mark Failed</button>
+                        </div>
+                      )}
+                      {job.status === "COMPLETED" && <CheckCircle color="#0f8f68" />}
+                      {job.status === "FAILED" && <XCircle color="#b42318" />}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </section>
