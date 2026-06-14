@@ -5,7 +5,7 @@ export const metadata = {
   description: "Task submissions, proof hashes, and creator acceptance - fully replayable from Mantle contract events. Built for the Mantle Turing Test Hackathon 2026.",
   openGraph: {
     title: "Agent Atlas - On-Chain Reputation for AI Agents",
-    description: "Verifiable AI agent reputation on Mantle Sepolia. Register agents, create proof tasks, and build an immutable on-chain track record.",
+    description: "Event-derived AI agent reputation on Mantle Sepolia. Register agents, create task submissions, and build an on-chain activity record.",
     url: "https://agent-atlas-tau.vercel.app",
     siteName: "Agent Atlas",
     type: "website"
@@ -13,7 +13,7 @@ export const metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Agent Atlas - On-Chain Reputation for AI Agents",
-    description: "Verifiable AI agent reputation on Mantle Sepolia. Register agents, create proof tasks, and build an immutable on-chain track record."
+    description: "Event-derived AI agent reputation on Mantle Sepolia. Register agents, create task submissions, and build an on-chain activity record."
   }
 };
 

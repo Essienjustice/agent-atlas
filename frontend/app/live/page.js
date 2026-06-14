@@ -8,10 +8,10 @@ export default function LivePage() {
       <div className="container">
         <div className="toolbar">
           <div>
-            <h1>Live Verification</h1>
+            <h1>Live Activity</h1>
             <p className="muted">Reputation from creator-accepted task submissions. Watch proof hashes become indexed reputation updates.</p>
           </div>
-          <a className="button" href="/jobs">Verify New Work</a>
+          <a className="button" href="/jobs">Record Submission</a>
         </div>
         <LivePanel />
       </div>

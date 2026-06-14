@@ -7,6 +7,7 @@ import { SEED_EVENTS } from "../lib/seedData";
 export default function LivePanel({ compact = false }) {
   const [events, setEvents] = useState(SEED_EVENTS.slice(0, compact ? 6 : 30));
   const [connected, setConnected] = useState(false);
+  const demoMode = events.some(isDemoEvent) || !connected;
 
   useEffect(() => {
     let source;
@@ -26,7 +27,7 @@ export default function LivePanel({ compact = false }) {
       try {
         mergeEvents(await api("/events/recent"));
       } catch (error) {
-        console.warn("Live event feed unavailable; using seed events.", error);
+        console.warn("Live event feed unavailable; using local demo snapshot.", error);
         mergeEvents(SEED_EVENTS);
         setConnected(false);
       }
@@ -62,7 +63,13 @@ export default function LivePanel({ compact = false }) {
   return (
     <section className="card">
       <h2>Verification Transparency</h2>
-      <p className="muted">{connected ? "Live stream connected." : "Polling indexed chain events."}</p>
+      <p className="muted">{connected ? "Live indexer stream connected." : "Indexer unavailable. Live protocol data unavailable."}</p>
+      {demoMode && (
+        <div className="demo-banner">
+          <strong>Demo Snapshot</strong>
+          <span>Local demo data is visible until the live indexer API responds. No Mantle transaction links are shown for demo records.</span>
+        </div>
+      )}
       <div className="timeline">
         {events.length === 0 && (
           <div className="event">
@@ -70,9 +77,12 @@ export default function LivePanel({ compact = false }) {
             <div className="muted">Seed events are shown until the live indexer stream is available.</div>
           </div>
         )}
-        {events.map((event) => (
+        {events.map((event) => {
+          const isDemo = isDemoEvent(event);
+          return (
           <div className={`event event-row ${event.type}`} key={event.id || event.timestamp}>
             <strong className={`event-badge ${event.type}`}>{event.type}</strong>
+            {isDemo && <span className="badge demo">Demo Snapshot</span>}
             {event.agent && <div className="muted">{event.agent}</div>}
             <div className="muted">{formatEventTime(event.timestamp)}</div>
             {["ProofVerified", "ProofFailed"].includes(event.type) && (
@@ -94,19 +104,19 @@ export default function LivePanel({ compact = false }) {
             {event.payload?.resultHash && <div><code>{event.payload.resultHash}</code></div>}
             {event.payload?.reasonHash && <div><code>{event.payload.reasonHash}</code></div>}
             {event.payload?.verificationTimestamp && <div className="muted">Verified: {event.payload.verificationTimestamp}</div>}
-            {event.payload?.transactionHash && (
+            {!isDemo && event.payload?.transactionHash && (
               <div className="muted">
                 Tx: <a className="tx-link" href={`https://sepolia.mantlescan.xyz/tx/${event.payload.transactionHash}`} target="_blank" rel="noopener noreferrer">
                   {event.payload.transactionHash.slice(0, 10)}...{event.payload.transactionHash.slice(-6)}
                 </a>
               </div>
             )}
-            {event.payload?.transactionUrl && <span className="badge">Verified On Mantle</span>}
-            {event.payload?.transactionUrl && <a href={event.payload.transactionUrl} target="_blank">View proof transaction</a>}
-            {event.payload?.contractUrl && <div><a href={event.payload.contractUrl} target="_blank">Verifier contract</a></div>}
-            {!event.payload?.resultHash && !event.payload?.transactionUrl && <pre>{JSON.stringify(event.payload, null, 2)}</pre>}
+            {!isDemo && event.payload?.transactionUrl && <span className="badge">Mantle Event</span>}
+            {!isDemo && event.payload?.transactionUrl && <a href={event.payload.transactionUrl} target="_blank">View Mantle transaction</a>}
+            {!isDemo && event.payload?.contractUrl && <div><a href={event.payload.contractUrl} target="_blank">Verifier contract</a></div>}
+            {!isDemo && !event.payload?.resultHash && !event.payload?.transactionUrl && <pre>{JSON.stringify(event.payload, null, 2)}</pre>}
           </div>
-        ))}
+        );})}
       </div>
     </section>
   );
@@ -116,4 +126,8 @@ function formatEventTime(value) {
   if (!value) return "";
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleTimeString();
+}
+
+function isDemoEvent(event) {
+  return event?.source === "demo" || event?.payload?.demoSnapshot;
 }

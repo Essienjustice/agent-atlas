@@ -2,6 +2,7 @@ const now = Date.now();
 
 export const SEED_AGENTS = [
   {
+    source: "demo",
     id: 1,
     address: "0xA1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0",
     owner: "0xA1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0",
@@ -23,6 +24,7 @@ export const SEED_AGENTS = [
     scoreHistory: [{ jobId: 3, reliabilityScore: 150, createdAt: now - 1000 * 60 * 41 }]
   },
   {
+    source: "demo",
     id: 2,
     address: "0xB2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1",
     owner: "0xB2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1",
@@ -44,6 +46,7 @@ export const SEED_AGENTS = [
     scoreHistory: [{ jobId: 2, reliabilityScore: 150, createdAt: now - 1000 * 60 * 22 }]
   },
   {
+    source: "demo",
     id: 3,
     address: "0xC3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2",
     owner: "0xC3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2",
@@ -68,6 +71,7 @@ export const SEED_AGENTS = [
 
 export const SEED_JOBS = [
   {
+    source: "demo",
     id: 1,
     title: "Summarise Mantle Q1 2025 ecosystem report",
     description: "Summarise Mantle Q1 2025 ecosystem report",
@@ -79,6 +83,7 @@ export const SEED_JOBS = [
     createdAt: now - 1000 * 60 * 60 * 2
   },
   {
+    source: "demo",
     id: 2,
     title: "Audit smart contract for reentrancy on Mantle Sepolia",
     description: "Audit smart contract for reentrancy on Mantle Sepolia",
@@ -90,6 +95,7 @@ export const SEED_JOBS = [
     createdAt: now - 1000 * 60 * 60 * 24
   },
   {
+    source: "demo",
     id: 3,
     title: "Classify DeFi protocol risk from on-chain data",
     description: "Classify DeFi protocol risk from on-chain data",
@@ -104,55 +110,50 @@ export const SEED_JOBS = [
 
 export const SEED_EVENTS = [
   {
+    source: "demo",
     id: "seed-1",
     type: "AgentRegistered",
     agent: "ResearchAgent",
     timestamp: new Date(now - 1000 * 60 * 8).toISOString(),
     sequence: 4,
-    payload: {
-      transactionHash: "0xabc123def456abc123def456abc123def456abc123def456abc123def456abc1",
-      transactionUrl: "https://sepolia.mantlescan.xyz/tx/0xabc123def456abc123def456abc123def456abc123def456abc123def456abc1"
-    }
+    payload: { demoSnapshot: true }
   },
   {
+    source: "demo",
     id: "seed-2",
     type: "JobAccepted",
     agent: "YieldAgent",
     timestamp: new Date(now - 1000 * 60 * 22).toISOString(),
     sequence: 3,
-    payload: {
-      transactionHash: "0xdef456abc123def456abc123def456abc123def456abc123def456abc123def4",
-      transactionUrl: "https://sepolia.mantlescan.xyz/tx/0xdef456abc123def456abc123def456abc123def456abc123def456abc123def4"
-    }
+    payload: { demoSnapshot: true }
   },
   {
+    source: "demo",
     id: "seed-3",
     type: "ScoreUpdated",
     agent: "RiskAgent",
     timestamp: new Date(now - 1000 * 60 * 41).toISOString(),
     sequence: 2,
     payload: {
+      demoSnapshot: true,
       scoreBefore: 120,
       scoreAfter: 150,
-      reliabilityScore: 150,
-      transactionHash: "0x789abc123def456789abc123def456789abc123def456789abc123def456789a",
-      transactionUrl: "https://sepolia.mantlescan.xyz/tx/0x789abc123def456789abc123def456789abc123def456789abc123def456789a"
+      reliabilityScore: 150
     }
   },
   {
+    source: "demo",
     id: "seed-4",
     type: "JobAccepted",
     agent: "ResearchAgent",
     timestamp: new Date(now - 1000 * 60 * 67).toISOString(),
     sequence: 1,
-    payload: {
-      transactionHash: "0x321def456abc123321def456abc123321def456abc123321def456abc123321d",
-      transactionUrl: "https://sepolia.mantlescan.xyz/tx/0x321def456abc123321def456abc123321def456abc123321def456abc123321d"
-    }
+    payload: { demoSnapshot: true }
   }
 ];
 
 export const SEED_METRICS = {
+  source: "demo",
   agentsRegistered: 3,
   jobsCreated: 12,
   acceptedSubmissions: 9,

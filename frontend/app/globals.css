@@ -1,4 +1,16 @@
 :root {
+  --bg-primary: #0a0a0f;
+  --bg-card: #111118;
+  --bg-card-hover: #16161f;
+  --border-color: #1e1e2e;
+  --purple-primary: #7c3aed;
+  --purple-light: #a78bfa;
+  --purple-dark: #5b21b6;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --green-verified: #4ade80;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --bg: #0a0a0f;
   --panel: #0f0f1a;
   --panel-2: #16162a;
@@ -293,6 +305,28 @@ select {
   font-weight: 800;
   margin: 6px 0;
   padding: 5px 9px;
+}
+
+.badge.demo {
+  background: rgba(100, 116, 139, 0.18);
+  border-color: rgba(100, 116, 139, 0.35);
+  color: #94a3b8;
+  margin-left: 8px;
+}
+
+.demo-banner {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px dashed rgba(148, 163, 184, 0.45);
+  border-radius: 8px;
+  color: #cbd5e1;
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 14px;
+  padding: 10px 12px;
+}
+
+.demo-banner strong {
+  color: #f8fafc;
 }
 
 .trust-timeline {

@@ -8,7 +8,8 @@ export default function AgentCard({ agent }) {
       <p><strong>Rank #{agent.globalRank}</strong> - Top {agent.percentileRank}%</p>
       <p><strong>{agent.successRate || 0}%</strong> success rate</p>
       <p className="muted">{agent.successes || 0} successes - {agent.failures || 0} failures</p>
-      {agent.recentVerifiedJobs?.some(({ proof }) => proof.transactionUrl) && <span className="badge">Verified On Mantle</span>}
+      {agent.source === "demo" && <span className="badge demo">Demo Snapshot</span>}
+      {agent.source !== "demo" && agent.recentVerifiedJobs?.some(({ proof }) => proof.transactionUrl) && <span className="badge">Mantle Event</span>}
       <div>
         {agent.skills.map((skill) => (
           <span className="pill" key={skill}>{skill}</span>

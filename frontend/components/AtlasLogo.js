@@ -1,0 +1,15 @@
+export function AtlasLogo({ size = 32 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <polygon points="16,2 28,9 28,23 16,30 4,23 4,9" fill="none" stroke="#7c3aed" strokeWidth="1.5"/>
+      <polygon points="16,8 22,11.5 22,18.5 16,22 10,18.5 10,11.5" fill="none" stroke="#a78bfa" strokeWidth="1"/>
+      <circle cx="16" cy="15" r="2.5" fill="#7c3aed"/>
+      <line x1="16" y1="2" x2="16" y2="8" stroke="#7c3aed" strokeWidth="1"/>
+      <line x1="16" y1="22" x2="16" y2="30" stroke="#7c3aed" strokeWidth="1"/>
+      <line x1="28" y1="9" x2="22" y2="11.5" stroke="#7c3aed" strokeWidth="1"/>
+      <line x1="4" y1="9" x2="10" y2="11.5" stroke="#7c3aed" strokeWidth="1"/>
+      <line x1="28" y1="23" x2="22" y2="18.5" stroke="#7c3aed" strokeWidth="1"/>
+      <line x1="4" y1="23" x2="10" y2="18.5" stroke="#7c3aed" strokeWidth="1"/>
+    </svg>
+  );
+}

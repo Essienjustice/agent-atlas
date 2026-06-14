@@ -6,9 +6,17 @@ import { SEED_METRICS } from "../lib/seedData";
 
 export default async function Home({ searchParams }) {
   const q = String(searchParams?.q || "").toLowerCase();
-  const [agents, metrics] = await Promise.all([api("/leaderboard"), api("/api/metrics", { fallback: SEED_METRICS })]);
+  const [agents, metrics, jobs] = await Promise.all([api("/leaderboard"), api("/api/metrics", { fallback: SEED_METRICS }), api("/jobs")]);
   const filtered = agents.filter((agent) => !q || agent.name.toLowerCase().includes(q) || agent.skills.join(" ").toLowerCase().includes(q));
   const topAgents = filtered.slice(0, 3);
+  const agentById = new Map(agents.map((agent) => [Number(agent.id), agent]));
+  const recentCompletedJobs = jobs
+    .filter((job) => job.status === "COMPLETED")
+    .slice(0, 5)
+    .map((job) => ({
+      ...job,
+      assignedAgentName: agentById.get(Number(job.assignedAgentId))?.name || `Agent ${job.assignedAgentId || "-"}`
+    }));
   const polish = process.env.APP_MODE === "polish";
 
   return (
@@ -40,15 +48,15 @@ export default async function Home({ searchParams }) {
 
         <div className="toolbar">
           <div>
-            <h2>Top Verified Agents</h2>
-            <p className="muted">Reputation is earned from on-chain proof acceptance, not self-reported claims.</p>
+            <h2>Top Submission Agents</h2>
+            <p className="muted">Reputation is earned from creator-accepted on-chain submissions, not self-reported claims.</p>
           </div>
         </div>
         <div className="grid">
           {topAgents.length === 0 ? (
             <div className="empty-state" style={{ gridColumn: "1 / -1" }}>
               <p>Loading indexed agents</p>
-              <span>Indexer data is syncing. Seeded snapshot data appears if the live API is unavailable.</span>
+              <span>Indexer data is syncing or unavailable. Demo snapshot data is labeled when shown.</span>
             </div>
           ) : (
             topAgents.map((agent) => <AgentCard agent={agent} key={agent.id} />)
@@ -57,21 +65,33 @@ export default async function Home({ searchParams }) {
 
         <div style={{ marginTop: 18 }}>
           <section className="card" style={{ marginBottom: 18 }}>
-            <h2>Recent Verified Submissions</h2>
+            <h2>Recent Accepted Submissions</h2>
             <table className="table">
+              <thead>
+                <tr>
+                  <th>Job ID</th>
+                  <th>Description</th>
+                  <th>Agent</th>
+                  <th>Transaction</th>
+                </tr>
+              </thead>
               <tbody>
-                {topAgents.flatMap((agent) =>
-                  (agent.recentSubmissions || agent.recentVerifiedJobs || []).map(({ job, proof }) => (
-                    <tr key={`${agent.id}-${proof.id}`}>
-                      <td><strong>{agent.name}</strong></td>
-                      <td>{job?.description || `Task ${proof.jobId}`}</td>
-                      <td><code>{(proof.resultHash || proof.reasonHash)?.slice(0, 10)}...{(proof.resultHash || proof.reasonHash)?.slice(-6)}</code></td>
-                      <td>{proof.transactionUrl ? <a href={proof.transactionUrl} target="_blank">Mantle tx</a> : <span className="muted">Indexed proof</span>}</td>
-                    </tr>
-                  ))
-                )}
-                {topAgents.every((agent) => !(agent.recentSubmissions || agent.recentVerifiedJobs)?.length) && (
-                  <tr><td className="muted">Accepted proof submissions appear here after chain events are indexed.</td></tr>
+                {recentCompletedJobs.map((job) => (
+                  <tr key={job.id}>
+                    <td><strong>#{job.id}</strong></td>
+                    <td>{job.description}</td>
+                    <td>{job.assignedAgentName}</td>
+                    <td>
+                      {job.source !== "demo" && job.completedTransactionHash ? (
+                        <a href={`https://sepolia.mantlescan.xyz/tx/${job.completedTransactionHash}`} target="_blank">Mantle tx</a>
+                      ) : (
+                        <span className="muted">{job.source === "demo" ? "Demo Snapshot" : "Indexed job"}</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {recentCompletedJobs.length === 0 && (
+                  <tr><td className="muted" colSpan="4">Completed submissions appear here after `/jobs` returns indexed completed jobs.</td></tr>
                 )}
               </tbody>
             </table>

@@ -52,8 +52,8 @@ export default function JobsClient({ initialJobs, agents }) {
     try {
       setJobs(await api("/jobs"));
     } catch (error) {
-      console.warn("Jobs refresh unavailable; using seed jobs.", error);
-      setJobs(SEED_JOBS);
+      console.warn("Jobs refresh unavailable; using local demo snapshot.", error);
+      setJobs(await api("/jobs", { fallback: SEED_JOBS }));
     }
   }
 
@@ -193,7 +193,7 @@ export default function JobsClient({ initialJobs, agents }) {
                   <td colSpan="3">
                     <div style={{ padding: 24, textAlign: "center" }}>
                       <p style={{ color: "#0f8f68", marginBottom: 8 }}>Loading indexed jobs</p>
-                      <p className="muted">The indexer is syncing. Seeded snapshot data appears if the live API is unavailable.</p>
+                      <p className="muted">The indexer is syncing or unavailable. Demo snapshot data is labeled when shown.</p>
                     </div>
                   </td>
                 </tr>

@@ -13,7 +13,7 @@ export default async function AgentProfile({ params }) {
             <h1>{agent.name}</h1>
             <p className="muted">Reputation from creator-accepted task submissions. {agent.externalIdentifier}</p>
           </div>
-          <a className="button" href="/live">Watch Verification</a>
+          <a className="button" href="/live">Watch Activity</a>
         </div>
         <div className="two-col">
           <section className="card">
@@ -25,7 +25,8 @@ export default async function AgentProfile({ params }) {
             <p>Successes: {agent.successes || 0}</p>
             <p>Failures: {agent.failures || 0}</p>
             <p>Task volume: {agent.score?.taskVolume || 0}</p>
-            {agent.proofs.some((proof) => proof.transactionUrl) && <span className="badge">Verified On Mantle</span>}
+            {agent.source === "demo" && <span className="badge demo">Demo Snapshot</span>}
+            {agent.source !== "demo" && agent.proofs.some((proof) => proof.transactionUrl) && <span className="badge">Mantle Event</span>}
           </section>
           <section className="card">
             <h2>Declared Capabilities</h2>
@@ -49,7 +50,7 @@ export default async function AgentProfile({ params }) {
                   <td>{job?.description || `Task ${proof.jobId}`}</td>
                   <td><code>{shortHash(proof.resultHash || proof.reasonHash)}</code></td>
                   <td>{proof.verificationStatus}</td>
-                  <td>{proof.transactionUrl ? <a href={proof.transactionUrl} target="_blank">Mantle tx</a> : <span className="muted">Indexed proof</span>}</td>
+                  <td>{agent.source !== "demo" && proof.transactionUrl ? <a href={proof.transactionUrl} target="_blank">Mantle tx</a> : <span className="muted">{agent.source === "demo" ? "Demo Snapshot" : "Indexed proof"}</span>}</td>
                 </tr>
               ))}
               {(agent.recentSubmissions || agent.recentVerifiedJobs).length === 0 && <tr><td className="muted" colSpan="4">Accepted proof submissions appear after chain events are indexed.</td></tr>}
@@ -87,9 +88,9 @@ export default async function AgentProfile({ params }) {
                   <span>↓</span>
                   <span>Leaderboard Updated</span>
                 </div>
-                {proof.transactionHash && <div className="muted">Tx: <code>{shortHash(proof.transactionHash)}</code></div>}
-                {proof.transactionUrl && <a href={proof.transactionUrl} target="_blank">Mantle transaction</a>}
-                {proof.contractUrl && <div><a href={proof.contractUrl} target="_blank">Verifier contract</a></div>}
+                {agent.source !== "demo" && proof.transactionHash && <div className="muted">Tx: <code>{shortHash(proof.transactionHash)}</code></div>}
+                {agent.source !== "demo" && proof.transactionUrl && <a href={proof.transactionUrl} target="_blank">Mantle transaction</a>}
+                {agent.source !== "demo" && proof.contractUrl && <div><a href={proof.contractUrl} target="_blank">Verifier contract</a></div>}
               </div>
             ))}
             {agent.proofs.length === 0 && <p className="muted">Proof hashes appear after accepted submissions are indexed.</p>}

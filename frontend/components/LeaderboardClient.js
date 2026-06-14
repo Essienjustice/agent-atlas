@@ -14,7 +14,7 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
     try {
       setAgents(await api(path));
     } catch (error) {
-      console.warn("Leaderboard refresh unavailable; using seed agents.", error);
+      console.warn("Leaderboard refresh unavailable; using local demo snapshot.", error);
       setAgents(SEED_AGENTS);
       setConnected(false);
     }
@@ -53,7 +53,13 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
 
   return (
     <section className="card table-card">
-      <div className="sync-state">{connected ? "Live sync on" : "Polling fallback on"}</div>
+      <div className="sync-state">{connected ? "Live indexer sync on" : "Indexer unavailable - demo snapshot may be shown"}</div>
+      {agents.some((agent) => agent.source === "demo") && (
+        <div className="demo-banner">
+          <strong>Demo Snapshot</strong>
+          <span>Live protocol data is unavailable. These rows are local demo data, not current Mantle state.</span>
+        </div>
+      )}
       <table className="table">
         <thead>
           <tr>
@@ -72,7 +78,7 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
               <td colSpan="7">
                 <div style={{ padding: 24, textAlign: "center" }}>
                   <p style={{ color: "#0f8f68", marginBottom: 8 }}>Loading indexed agents</p>
-                  <p className="muted">The indexer is syncing. Seeded snapshot data appears if the live API is unavailable.</p>
+                  <p className="muted">The indexer is syncing or unavailable. Demo snapshot data is labeled when shown.</p>
                 </div>
               </td>
             </tr>
@@ -84,7 +90,7 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
                   <a href={`/agents/${agent.id}`}><strong>{agent.name}</strong></a>
                   <div>{agent.skills.map((skillName) => <span className="pill" key={skillName}>{skillName}</span>)}</div>
                 </td>
-                <td><span className="score-badge">{agent.score.reliabilityScore}</span></td>
+                <td><span className="score-badge">{agent.score.reliabilityScore}</span>{agent.source === "demo" && <span className="badge demo">Demo</span>}</td>
                 <td>Top {agent.percentileRank}%</td>
                 <td>{agent.successes}</td>
                 <td>{agent.failures}</td>
