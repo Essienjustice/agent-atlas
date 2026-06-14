@@ -93,6 +93,13 @@ test("api reads leaderboard and lifecycle state from indexed contract events", a
   const events = await request(app).get("/protocol/v1/events?eventName=ScoreUpdated").expect(200);
   assert.equal(events.body[0].eventName, "ScoreUpdated");
 
+  const metrics = await request(app).get("/api/metrics").expect(200);
+  assert.equal(metrics.body.source, "indexer-sqlite");
+  assert.equal(metrics.body.agentsRegistered, 1);
+  assert.equal(metrics.body.jobsCreated, 1);
+  assert.equal(metrics.body.acceptedSubmissions, 1);
+  assert.equal(metrics.body.scoreUpdates, 1);
+
   applyEvent(db, {
     contract: "ProofVerifier",
     eventName: "ProofFailed",

@@ -1,4 +1,4 @@
-import { SEED_AGENTS, SEED_EVENTS, SEED_JOBS } from "./seedData";
+import { SEED_AGENTS, SEED_EVENTS, SEED_JOBS, SEED_METRICS } from "./seedData";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_INDEXER_API_URL || "https://agent-atlas-indexer.vercel.app";
 
@@ -47,5 +47,6 @@ function fallbackForPath(path) {
   if (path.startsWith("/agents")) return SEED_AGENTS;
   if (path.startsWith("/jobs")) return SEED_JOBS;
   if (path.startsWith("/events")) return SEED_EVENTS;
+  if (path.startsWith("/api/metrics")) return SEED_METRICS;
   return null;
 }

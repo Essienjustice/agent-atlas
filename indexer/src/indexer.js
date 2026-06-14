@@ -142,7 +142,12 @@ async function replay({ db = openIndexerDb(), fromBlock = 0, toBlock = "latest",
     for (const source of sources) {
       for (const eventName of source.events) {
         const filter = source.contract.filters[eventName]();
-        const logs = await source.contract.queryFilter(filter, start, end);
+        const logs = await withRetry(`replay:${source.name}:${eventName}:${start}-${end}`, () => source.contract.queryFilter(filter, start, end));
+        if (!logs) {
+          const error = new Error(`RPC replay failed for ${source.name}.${eventName} ${start}-${end}`);
+          addDeadLetter(db, "replay-rpc", error, { contract: source.name, eventName, start, end });
+          throw error;
+        }
         for (const log of logs) batch.push(normalizeLog(source, eventName, log));
       }
     }

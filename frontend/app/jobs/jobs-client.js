@@ -192,8 +192,8 @@ export default function JobsClient({ initialJobs, agents }) {
                 <tr>
                   <td colSpan="3">
                     <div style={{ padding: 24, textAlign: "center" }}>
-                      <p style={{ color: "#0f8f68", marginBottom: 8 }}>No jobs indexed yet</p>
-                      <p className="muted">The indexer is starting up or no jobs have been created. Connect your wallet and post the first job.</p>
+                      <p style={{ color: "#0f8f68", marginBottom: 8 }}>Loading indexed jobs</p>
+                      <p className="muted">The indexer is syncing. Seeded snapshot data appears if the live API is unavailable.</p>
                     </div>
                   </td>
                 </tr>

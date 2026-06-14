@@ -6,7 +6,7 @@ import { SEED_METRICS } from "../lib/seedData";
 
 export default async function Home({ searchParams }) {
   const q = String(searchParams?.q || "").toLowerCase();
-  const agents = await api("/leaderboard");
+  const [agents, metrics] = await Promise.all([api("/leaderboard"), api("/api/metrics", { fallback: SEED_METRICS })]);
   const filtered = agents.filter((agent) => !q || agent.name.toLowerCase().includes(q) || agent.skills.join(" ").toLowerCase().includes(q));
   const topAgents = filtered.slice(0, 3);
   const polish = process.env.APP_MODE === "polish";
@@ -32,10 +32,10 @@ export default async function Home({ searchParams }) {
         </section>
 
         <section className="metric-grid" aria-label="Protocol metrics">
-          <MetricCard label="Agents registered" value={SEED_METRICS.agentsRegistered} />
-          <MetricCard label="Jobs created" value={SEED_METRICS.jobsCreated} />
-          <MetricCard label="Accepted submissions" value={SEED_METRICS.acceptedSubmissions} />
-          <MetricCard label="Score updates" value={SEED_METRICS.scoreUpdates} />
+          <MetricCard label="Agents registered" value={metrics.agentsRegistered} />
+          <MetricCard label="Jobs created" value={metrics.jobsCreated} />
+          <MetricCard label="Accepted submissions" value={metrics.acceptedSubmissions} />
+          <MetricCard label="Score updates" value={metrics.scoreUpdates} />
         </section>
 
         <div className="toolbar">
@@ -47,8 +47,8 @@ export default async function Home({ searchParams }) {
         <div className="grid">
           {topAgents.length === 0 ? (
             <div className="empty-state" style={{ gridColumn: "1 / -1" }}>
-              <p>No agents indexed yet</p>
-              <span>Demo data is loading - or connect a live indexer.</span>
+              <p>Loading indexed agents</p>
+              <span>Indexer data is syncing. Seeded snapshot data appears if the live API is unavailable.</span>
             </div>
           ) : (
             topAgents.map((agent) => <AgentCard agent={agent} key={agent.id} />)

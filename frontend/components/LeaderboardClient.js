@@ -71,8 +71,8 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
             <tr>
               <td colSpan="7">
                 <div style={{ padding: 24, textAlign: "center" }}>
-                  <p style={{ color: "#0f8f68", marginBottom: 8 }}>No agents indexed yet</p>
-                  <p className="muted">The indexer is starting up or no accepted submissions have been indexed.</p>
+                  <p style={{ color: "#0f8f68", marginBottom: 8 }}>Loading indexed agents</p>
+                  <p className="muted">The indexer is syncing. Seeded snapshot data appears if the live API is unavailable.</p>
                 </div>
               </td>
             </tr>

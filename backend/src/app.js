@@ -43,6 +43,22 @@ function createApp(options = {}) {
   app.get("/events", streamIndexedEvents(db));
   app.get("/events/recent", (req, res) => res.json(recentEvents(db)));
   app.get("/debug/dead-letters", (req, res) => res.json(listDeadLetters(db)));
+  app.get("/api/metrics", (req, res) => {
+    try {
+      return res.json(metricsSnapshot(db));
+    } catch (error) {
+      return res.status(200).json({
+        ok: false,
+        source: "indexer-sqlite",
+        error: error.message,
+        agentsRegistered: 0,
+        jobsCreated: 0,
+        acceptedSubmissions: 0,
+        scoreUpdates: 0,
+        eventsIndexed: 0
+      });
+    }
+  });
 
   app.get("/agents", (req, res) => res.json(listAgents(db)));
   app.get("/agents/:id", (req, res) => {
@@ -130,6 +146,26 @@ function createApp(options = {}) {
 
   app.locals.db = db;
   return app;
+}
+
+function metricsSnapshot(db) {
+  const snapshot = integritySnapshot(db);
+  const acceptedSubmissions = db
+    .prepare("SELECT COUNT(*) AS count FROM proofs WHERE verified = 1")
+    .get().count;
+  const scoreUpdates = db
+    .prepare("SELECT COUNT(*) AS count FROM events WHERE event_name = 'ScoreUpdated'")
+    .get().count;
+  return {
+    ok: true,
+    source: "indexer-sqlite",
+    agentsRegistered: snapshot.agents,
+    jobsCreated: snapshot.jobs,
+    acceptedSubmissions: Number(acceptedSubmissions),
+    scoreUpdates: Number(scoreUpdates),
+    eventsIndexed: snapshot.events,
+    indexed: snapshot
+  };
 }
 
 function requireChainMode(req, res, next) {
