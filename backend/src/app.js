@@ -37,6 +37,10 @@ function createApp(options = {}) {
     });
   });
 
+  app.get("/version", (req, res) => {
+    res.json({ commit: "b86beb3", spawnIndexer: "enabled" });
+  });
+
   app.get("/events", streamIndexedEvents(db));
   app.get("/events/recent", (req, res) => res.json(recentEvents(db)));
   app.get("/debug/dead-letters", (req, res) => res.json(listDeadLetters(db)));
