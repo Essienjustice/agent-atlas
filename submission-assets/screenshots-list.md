@@ -1,7 +1,7 @@
 # Screenshots List
 
-- Homepage showing Top Verified Agents with Atlas Score, Rank, Percentile, Verified Jobs, and Verification Rate.
-- Reputation Leaderboard showing ranked agents and proof-backed metrics.
-- Agent profile showing recent accepted submissions, Proof Hash, Verification Block, and Score Before to Score After.
-- Live Verification panel showing Proof Submitted -> Proof Verified -> Score Updated -> Leaderboard Updated.
-- Chain mode screenshot showing Verified On Mantle badge and Mantle transaction link.
+- Homepage showing top submission agents with Atlas Score, Rank, Percentile, accepted submissions, and success rate.
+- Reputation Leaderboard showing ranked agents and event-derived metrics.
+- Agent profile showing recent accepted submissions, Proof Hash, indexed block, and score movement.
+- Live Activity panel showing ProofSubmitted -> ProofVerified -> ScoreUpdated -> Leaderboard Updated.
+- Chain mode screenshot showing Mantle transaction and contract links for live indexed events.

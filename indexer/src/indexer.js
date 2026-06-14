@@ -5,18 +5,27 @@ const { addDeadLetter, applyEvent, getMeta, openIndexerDb, setMeta } = require("
 
 const deadLetters = [];
 const pendingConfirmations = [];
+const DEFAULT_RPC_URL = "https://rpc.sepolia.mantle.xyz";
+const DEFAULT_AGENT_REGISTRY_ADDRESS = "0x3cf0763443C8Ab7672f51B8e1B34956786522a0e";
+const DEFAULT_JOB_MANAGER_ADDRESS = "0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb";
+const DEFAULT_PROOF_VERIFIER_ADDRESS = "0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565";
+const DEFAULT_ATLAS_SCORE_ADDRESS = "0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB";
+const DEFAULT_START_BLOCK = 39900000;
+const DEFAULT_CHUNK_SIZE = 2000;
+const MANTLE_SEPOLIA_NETWORK = { chainId: 5003, name: "mantle-sepolia" };
+
+function defaultProvider() {
+  return new ethers.JsonRpcProvider(process.env.RPC_URL ?? DEFAULT_RPC_URL, MANTLE_SEPOLIA_NETWORK, { staticNetwork: true });
+}
 
 function requireConfig() {
-  const required = {
-    RPC_URL: process.env.RPC_URL,
-    AGENT_REGISTRY_ADDRESS: process.env.AGENT_REGISTRY_ADDRESS,
-    JOB_MANAGER_ADDRESS: process.env.JOB_MANAGER_ADDRESS,
-    PROOF_VERIFIER_ADDRESS: process.env.PROOF_VERIFIER_ADDRESS,
-    ATLAS_SCORE_ADDRESS: process.env.ATLAS_SCORE_ADDRESS
+  return {
+    RPC_URL: process.env.RPC_URL ?? DEFAULT_RPC_URL,
+    AGENT_REGISTRY_ADDRESS: process.env.AGENT_REGISTRY_ADDRESS ?? DEFAULT_AGENT_REGISTRY_ADDRESS,
+    JOB_MANAGER_ADDRESS: process.env.JOB_MANAGER_ADDRESS ?? DEFAULT_JOB_MANAGER_ADDRESS,
+    PROOF_VERIFIER_ADDRESS: process.env.PROOF_VERIFIER_ADDRESS ?? DEFAULT_PROOF_VERIFIER_ADDRESS,
+    ATLAS_SCORE_ADDRESS: process.env.ATLAS_SCORE_ADDRESS ?? DEFAULT_ATLAS_SCORE_ADDRESS
   };
-  const missing = Object.entries(required).filter(([, value]) => !value).map(([key]) => key);
-  if (missing.length > 0) throw new Error(`Indexer missing chain config: ${missing.join(", ")}`);
-  return required;
 }
 
 function contracts(provider, config = requireConfig()) {
@@ -129,11 +138,11 @@ async function withRetry(label, handler, attempts = 3) {
   return null;
 }
 
-async function replay({ db = openIndexerDb(), fromBlock = 0, toBlock = "latest", provider = new ethers.JsonRpcProvider(process.env.RPC_URL) } = {}) {
+async function replay({ db = openIndexerDb(), fromBlock = DEFAULT_START_BLOCK, toBlock = "latest", provider = defaultProvider() } = {}) {
   const confirmations = Number(process.env.INDEXER_CONFIRMATIONS || 6);
   const chainTip = toBlock === "latest" ? await provider.getBlockNumber() : Number(toBlock);
   const latest = Math.max(0, chainTip - confirmations);
-  const chunkSize = Number(process.env.INDEXER_BLOCK_CHUNK || 9000);
+  const chunkSize = Number(process.env.CHUNK_SIZE || process.env.INDEXER_BLOCK_CHUNK || DEFAULT_CHUNK_SIZE);
   const sources = contracts(provider);
   let eventCount = 0;
   for (let start = Number(fromBlock); start <= latest; start += chunkSize + 1) {
@@ -172,7 +181,7 @@ async function replay({ db = openIndexerDb(), fromBlock = 0, toBlock = "latest",
   return { fromBlock: Number(fromBlock), toBlock: latest, chainTip, confirmations, events: eventCount };
 }
 
-async function listen({ db = openIndexerDb(), provider = new ethers.JsonRpcProvider(process.env.RPC_URL) } = {}) {
+async function listen({ db = openIndexerDb(), provider = defaultProvider() } = {}) {
   const sources = contracts(provider);
   setInterval(() => {
     drainPendingConfirmations(db, provider).catch((error) => {
@@ -233,7 +242,7 @@ async function main() {
     throw new Error("Indexer requires CHAIN_MODE=chain. Demo/mock state is not indexer-canonical.");
   }
   const db = openIndexerDb();
-  const fromBlock = Number(getMeta(db, "lastBlock") || process.env.INDEXER_FROM_BLOCK || 0);
+  const fromBlock = Number(getMeta(db, "lastBlock") || process.env.INDEXER_FROM_BLOCK || DEFAULT_START_BLOCK);
   const result = await replay({ db, fromBlock });
   console.log(`Indexer replayed ${result.events} events through block ${result.toBlock}.`);
   await listen({ db });
