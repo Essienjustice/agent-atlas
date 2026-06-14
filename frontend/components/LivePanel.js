@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { API_URL, api } from "../lib/api";
+import { SEED_EVENTS } from "../lib/seedData";
 
 export default function LivePanel({ compact = false }) {
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState(SEED_EVENTS.slice(0, compact ? 6 : 30));
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
@@ -24,7 +25,9 @@ export default function LivePanel({ compact = false }) {
     async function hydrate() {
       try {
         mergeEvents(await api("/events/recent"));
-      } catch {
+      } catch (error) {
+        console.warn("Live event feed unavailable; using seed events.", error);
+        mergeEvents(SEED_EVENTS);
         setConnected(false);
       }
     }
@@ -63,13 +66,14 @@ export default function LivePanel({ compact = false }) {
       <div className="timeline">
         {events.length === 0 && (
           <div className="event">
-            <strong>Ready</strong>
-            <div className="muted">Create or complete a job to begin the verification sequence.</div>
+            <strong>Demo mode - Connect indexer for live events</strong>
+            <div className="muted">Seed events are shown until the live indexer stream is available.</div>
           </div>
         )}
         {events.map((event) => (
-          <div className={`event ${event.type}`} key={event.id || event.timestamp}>
-            <strong>{event.type}</strong>
+          <div className={`event event-row ${event.type}`} key={event.id || event.timestamp}>
+            <strong className={`event-badge ${event.type}`}>{event.type}</strong>
+            {event.agent && <div className="muted">{event.agent}</div>}
             <div className="muted">{formatEventTime(event.timestamp)}</div>
             {["ProofVerified", "ProofFailed"].includes(event.type) && (
               <div className="trust-timeline horizontal">
@@ -90,7 +94,13 @@ export default function LivePanel({ compact = false }) {
             {event.payload?.resultHash && <div><code>{event.payload.resultHash}</code></div>}
             {event.payload?.reasonHash && <div><code>{event.payload.reasonHash}</code></div>}
             {event.payload?.verificationTimestamp && <div className="muted">Verified: {event.payload.verificationTimestamp}</div>}
-            {event.payload?.transactionHash && <div className="muted">Tx: <code>{event.payload.transactionHash}</code></div>}
+            {event.payload?.transactionHash && (
+              <div className="muted">
+                Tx: <a className="tx-link" href={`https://sepolia.mantlescan.xyz/tx/${event.payload.transactionHash}`} target="_blank" rel="noopener noreferrer">
+                  {event.payload.transactionHash.slice(0, 10)}...{event.payload.transactionHash.slice(-6)}
+                </a>
+              </div>
+            )}
             {event.payload?.transactionUrl && <span className="badge">Verified On Mantle</span>}
             {event.payload?.transactionUrl && <a href={event.payload.transactionUrl} target="_blank">View proof transaction</a>}
             {event.payload?.contractUrl && <div><a href={event.payload.contractUrl} target="_blank">Verifier contract</a></div>}

@@ -1,3 +1,5 @@
+import { SEED_AGENTS, SEED_EVENTS, SEED_JOBS } from "./seedData";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_INDEXER_API_URL || "https://agent-atlas-indexer.vercel.app";
 
 export async function api(path, options = {}) {
@@ -24,7 +26,7 @@ export { API_URL };
 function fallbackForPath(path) {
   if (path.startsWith("/agents/")) {
     const id = path.split("/").filter(Boolean).pop();
-    return {
+    return SEED_AGENTS.find((agent) => String(agent.id) === String(id)) || {
       id,
       name: `Agent ${id}`,
       skills: [],
@@ -41,9 +43,9 @@ function fallbackForPath(path) {
       scoreHistory: []
     };
   }
-  if (path.startsWith("/leaderboard")) return [];
-  if (path.startsWith("/agents")) return [];
-  if (path.startsWith("/jobs")) return [];
-  if (path.startsWith("/events")) return [];
+  if (path.startsWith("/leaderboard")) return SEED_AGENTS;
+  if (path.startsWith("/agents")) return SEED_AGENTS;
+  if (path.startsWith("/jobs")) return SEED_JOBS;
+  if (path.startsWith("/events")) return SEED_EVENTS;
   return null;
 }

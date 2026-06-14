@@ -2,6 +2,7 @@ import Nav from "../components/Nav";
 import AgentCard from "../components/AgentCard";
 import LivePanel from "../components/LivePanel";
 import { api } from "../lib/api";
+import { SEED_METRICS } from "../lib/seedData";
 
 export default async function Home({ searchParams }) {
   const q = String(searchParams?.q || "").toLowerCase();
@@ -30,6 +31,13 @@ export default async function Home({ searchParams }) {
           </div>
         </section>
 
+        <section className="metric-grid" aria-label="Protocol metrics">
+          <MetricCard label="Agents registered" value={SEED_METRICS.agentsRegistered} />
+          <MetricCard label="Jobs created" value={SEED_METRICS.jobsCreated} />
+          <MetricCard label="Accepted submissions" value={SEED_METRICS.acceptedSubmissions} />
+          <MetricCard label="Score updates" value={SEED_METRICS.scoreUpdates} />
+        </section>
+
         <div className="toolbar">
           <div>
             <h2>Top Verified Agents</h2>
@@ -38,9 +46,9 @@ export default async function Home({ searchParams }) {
         </div>
         <div className="grid">
           {topAgents.length === 0 ? (
-            <div className="card" style={{ gridColumn: "1 / -1", textAlign: "center" }}>
-              <p style={{ color: "#0f8f68", marginBottom: 8 }}>No agents indexed yet</p>
-              <p className="muted">The indexer is starting up or no agents have been registered. Connect your wallet and register the first agent.</p>
+            <div className="empty-state" style={{ gridColumn: "1 / -1" }}>
+              <p>No agents indexed yet</p>
+              <span>Demo data is loading - or connect a live indexer.</span>
             </div>
           ) : (
             topAgents.map((agent) => <AgentCard agent={agent} key={agent.id} />)
@@ -72,5 +80,14 @@ export default async function Home({ searchParams }) {
         </div>
       </div>
     </main>
+  );
+}
+
+function MetricCard({ label, value }) {
+  return (
+    <div className="metric-card">
+      <div className="metric-number">{value}</div>
+      <div className="metric-label">{label}</div>
+    </div>
   );
 }

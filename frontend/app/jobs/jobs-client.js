@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle, Play, Plus, Upload, XCircle } from "lucide-react";
 import { api } from "../../lib/api";
 import LivePanel from "../../components/LivePanel";
+import { SEED_JOBS } from "../../lib/seedData";
 
 const MANTLE_SEPOLIA_CHAIN = {
   chainId: "0x138B",
@@ -48,7 +49,12 @@ export default function JobsClient({ initialJobs, agents }) {
   }
 
   async function refreshJobs() {
-    setJobs(await api("/jobs"));
+    try {
+      setJobs(await api("/jobs"));
+    } catch (error) {
+      console.warn("Jobs refresh unavailable; using seed jobs.", error);
+      setJobs(SEED_JOBS);
+    }
   }
 
   async function createJob(event) {
@@ -158,6 +164,7 @@ export default function JobsClient({ initialJobs, agents }) {
           <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Submission to record" required />
           <div className="toolbar">
             <input className="input" type="number" value={reward} onChange={(e) => setReward(e.target.value)} min="0" />
+            <p className="fee-note">Creating a job costs 0.005 MNT (Mantle Sepolia testnet)</p>
             <button className="button" disabled={busy} type="submit"><Plus size={18} />Create Proof Task</button>
           </div>
         </form>
@@ -171,6 +178,7 @@ export default function JobsClient({ initialJobs, agents }) {
             <button className="button secondary" type="button" disabled={busy} onClick={connectWallet}>Connect Wallet</button>
             <button className="button secondary" type="button" disabled={busy} onClick={addMantleSepoliaToWallet}>+ Add Mantle Sepolia</button>
           </div>
+          <p className="wallet-helper">Requires MetaMask on Mantle Sepolia (Chain ID 5003)</p>
           {walletAddress && walletChainId && walletChainId.toLowerCase() !== MANTLE_SEPOLIA_CHAIN.chainId.toLowerCase() && (
             <p className="muted">Wrong network. Agent Atlas runs on Mantle Sepolia. Use Connect Wallet again to switch.</p>
           )}
@@ -253,6 +261,7 @@ export default function JobsClient({ initialJobs, agents }) {
     if (!preparedTx) return;
     if (!window.ethereum) {
       setOptimisticEvents((items) => [{ type: "Wallet Missing", text: "Install or unlock an EIP-1193 wallet to submit this transaction" }, ...items].slice(0, 5));
+      window.open("https://metamask.io/download/", "_blank", "noopener");
       return;
     }
     setBusy(true);
@@ -279,6 +288,7 @@ export default function JobsClient({ initialJobs, agents }) {
   async function connectWallet() {
     if (!window.ethereum) {
       setOptimisticEvents((items) => [{ type: "Wallet Missing", text: "Install or unlock an EIP-1193 wallet to submit this transaction" }, ...items].slice(0, 5));
+      window.open("https://metamask.io/download/", "_blank", "noopener");
       return;
     }
     try {
@@ -294,6 +304,7 @@ export default function JobsClient({ initialJobs, agents }) {
   async function addMantleSepoliaToWallet() {
     if (!window.ethereum) {
       setOptimisticEvents((items) => [{ type: "Wallet Missing", text: "Install or unlock MetaMask to add Mantle Sepolia" }, ...items].slice(0, 5));
+      window.open("https://metamask.io/download/", "_blank", "noopener");
       return;
     }
     try {
@@ -312,7 +323,7 @@ export default function JobsClient({ initialJobs, agents }) {
   async function pollForIndexedChange(txHash) {
     for (let attempt = 0; attempt < 12; attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 2500));
-      const nextJobs = await api("/jobs");
+      const nextJobs = await api("/jobs", { fallback: SEED_JOBS });
       setJobs(nextJobs);
       if (JSON.stringify(nextJobs).includes(txHash)) {
         setWaitingForIndex(false);

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { API_URL, api } from "../lib/api";
+import { SEED_AGENTS } from "../lib/seedData";
 
 export default function LeaderboardClient({ initialAgents, skill = "" }) {
   const [agents, setAgents] = useState(initialAgents);
@@ -12,7 +13,9 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
   async function refresh() {
     try {
       setAgents(await api(path));
-    } catch {
+    } catch (error) {
+      console.warn("Leaderboard refresh unavailable; using seed agents.", error);
+      setAgents(SEED_AGENTS);
       setConnected(false);
     }
   }
@@ -49,7 +52,7 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
   }, [path]);
 
   return (
-    <section className="card">
+    <section className="card table-card">
       <div className="sync-state">{connected ? "Live sync on" : "Polling fallback on"}</div>
       <table className="table">
         <thead>
@@ -76,12 +79,12 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
           ) : (
             agents.map((agent) => (
               <tr key={agent.id}>
-                <td><strong>#{agent.globalRank}</strong></td>
+                <td><strong className={rankClass(agent.globalRank)}>#{agent.globalRank}</strong></td>
                 <td>
                   <a href={`/agents/${agent.id}`}><strong>{agent.name}</strong></a>
                   <div>{agent.skills.map((skillName) => <span className="pill" key={skillName}>{skillName}</span>)}</div>
                 </td>
-                <td><span className="score-small">{agent.score.reliabilityScore}</span></td>
+                <td><span className="score-badge">{agent.score.reliabilityScore}</span></td>
                 <td>Top {agent.percentileRank}%</td>
                 <td>{agent.successes}</td>
                 <td>{agent.failures}</td>
@@ -93,4 +96,11 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
       </table>
     </section>
   );
+}
+
+function rankClass(rank) {
+  if (Number(rank) === 1) return "rank rank-1";
+  if (Number(rank) === 2) return "rank rank-2";
+  if (Number(rank) === 3) return "rank rank-3";
+  return "rank";
 }

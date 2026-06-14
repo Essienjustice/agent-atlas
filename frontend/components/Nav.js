@@ -6,7 +6,7 @@ export default function Nav() {
     <header className="topbar">
       <Link className="brand" href="/">
         <Network size={22} />
-        <span>AGENT ATLAS</span>
+        <span>Agent Atlas</span>
       </Link>
       <nav className="nav">
         <Link href="/leaderboard">Leaderboard</Link>
