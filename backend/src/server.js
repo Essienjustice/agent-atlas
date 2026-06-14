@@ -7,7 +7,11 @@ const { assertContractsReachable, isChainMode } = require("./chain");
 const PORT = Number(process.env.PORT || 4000);
 
 function spawnIndexer() {
-  if (!isChainMode()) return;
+  console.log(`[indexer] spawnIndexer called, CHAIN_MODE=${process.env.CHAIN_MODE}`);
+  if (!isChainMode()) {
+    console.log("[indexer] skipping - CHAIN_MODE is not 'chain'");
+    return;
+  }
 
   const indexerPath = path.join(__dirname, "..", "..", "indexer", "src", "indexer.js");
 
