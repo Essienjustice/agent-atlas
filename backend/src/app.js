@@ -29,14 +29,11 @@ function createApp(options = {}) {
   app.use(express.json());
 
   app.get("/health", (req, res) => {
-    res.json({
-      ok: true,
-      appMode,
-      demoMode,
-      demoDay,
-      chainMode: isChainMode(),
-      authority: "indexer",
-      indexed: integritySnapshot(db)
+    res.status(200).json({
+      status: "ok",
+      service: "agent-atlas-backend",
+      network: "mantle-sepolia",
+      timestamp: new Date().toISOString()
     });
   });
 

@@ -1,0 +1,9 @@
+node_modules
+frontend
+contracts
+docker
+.git
+*.log
+coverage
+.env
+.env.local
