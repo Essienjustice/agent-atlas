@@ -2,13 +2,17 @@ require("dotenv").config({ path: require("path").join(__dirname, "..", "..", ".e
 const { createApp } = require("./app");
 const { assertContractsReachable, isChainMode } = require("./chain");
 
-const port = Number(process.env.PORT || 4000);
+const PORT = Number(process.env.PORT || 4000);
 
 async function main() {
-  if (isChainMode()) await assertContractsReachable();
   const app = createApp();
-  app.listen(port, () => {
-    console.log(`Agent Atlas API running on http://localhost:${port}`);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Agent Atlas API running on port ${PORT}`);
+    if (isChainMode()) {
+      assertContractsReachable().catch((error) => {
+        console.error(`Contract reachability check failed: ${error.message}`);
+      });
+    }
   });
 }
 
