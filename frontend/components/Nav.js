@@ -9,6 +9,7 @@ export default function Nav() {
         <span style={{fontWeight:700, fontSize:'1.1rem'}}>Agent Atlas</span>
       </a>
       <nav className="nav">
+        <a href="https://agent-atlas-site.vercel.app" target="_blank" rel="noopener noreferrer">About</a>
         <Link href="/leaderboard">Leaderboard</Link>
         <Link href="/jobs">Job Board</Link>
         <Link href="/live">Live Activity</Link>
