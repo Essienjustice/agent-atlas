@@ -84,6 +84,19 @@ function openIndexerDb(dbPath = process.env.INDEXER_DB || defaultDbPath) {
       payload TEXT,
       created_at TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS agent_outputs (
+      job_id INTEGER PRIMARY KEY,
+      agent_id INTEGER NOT NULL,
+      agent_name TEXT,
+      job_description TEXT,
+      ai_output TEXT NOT NULL,
+      model TEXT,
+      output_length INTEGER,
+      proof_hash TEXT,
+      submit_tx TEXT,
+      accept_tx TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
   ensureColumn(db, "events", "block_hash", "TEXT");
   ensureColumn(db, "agents", "owner", "TEXT");

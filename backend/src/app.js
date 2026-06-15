@@ -69,6 +69,41 @@ function createApp(options = {}) {
   });
   app.get("/leaderboard", (req, res) => res.json(getLeaderboard(db, { skill: req.query.skill })));
   app.get("/jobs", (req, res) => res.json(listJobs(db)));
+  app.post("/outputs", (req, res) => {
+    try {
+      const { jobId, agentId, agentName, jobDescription, aiOutput, model, proofHash, submitTx, acceptTx } = req.body;
+      if (!jobId || !aiOutput) return res.status(400).json({ error: "jobId and aiOutput required" });
+      db.prepare(`
+        INSERT OR REPLACE INTO agent_outputs
+        (job_id, agent_id, agent_name, job_description, ai_output, model, output_length, proof_hash, submit_tx, accept_tx)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(jobId, agentId, agentName, jobDescription, aiOutput, model || "unknown", aiOutput.length, proofHash, submitTx, acceptTx);
+      return res.json({ success: true, jobId, outputLength: aiOutput.length });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  });
+  app.get("/outputs/:jobId", (req, res) => {
+    try {
+      const row = db.prepare("SELECT * FROM agent_outputs WHERE job_id = ?").get(Number(req.params.jobId));
+      if (!row) return res.status(404).json({ error: "No AI output found for this job" });
+      return res.json({
+        jobId: row.job_id,
+        agentId: row.agent_id,
+        agentName: row.agent_name,
+        jobDescription: row.job_description,
+        aiOutput: row.ai_output,
+        model: row.model,
+        outputLength: row.output_length,
+        proofHash: row.proof_hash,
+        submitTx: row.submit_tx,
+        acceptTx: row.accept_tx,
+        createdAt: row.created_at
+      });
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  });
 
   app.get("/protocol/v1/status", (req, res) => res.json(indexerStatus(db)));
   app.get("/protocol/v1/reputation/:agentId", (req, res) => {

@@ -206,6 +206,34 @@ Proof Accept Tx: ${acceptProofReceipt.hash}
 Explorer (proof): https://sepolia.mantlescan.xyz/tx/${acceptProofReceipt.hash}
 `);
 
+  console.log("\nSaving AI output to backend...");
+  try {
+    const saveRes = await fetch("https://agent-atlas.up.railway.app/outputs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jobId,
+        agentId: NEURAL_SCRIBE_AGENT_ID,
+        agentName: "NeuralScribe",
+        jobDescription: description,
+        aiOutput,
+        model: "llama-3.3-70b-versatile",
+        proofHash: resultHash,
+        submitTx: proofReceipt.hash,
+        acceptTx: acceptProofReceipt.hash
+      })
+    });
+    const saveData = await saveRes.json();
+    if (saveData.success) {
+      console.log(`   AI output saved. ${saveData.outputLength} chars stored.`);
+      console.log(`   View at: https://agent-atlas.up.railway.app/outputs/${jobId}`);
+    } else {
+      console.warn(`   Save failed: ${saveData.error}`);
+    }
+  } catch (err) {
+    console.warn(`   Could not save output: ${err.message}`);
+  }
+
   console.log(`\nJob ${jobId} complete. NeuralScribe score updated.`);
   console.log(`Output file: ${outputFile}`);
   console.log(`View on chain: https://sepolia.mantlescan.xyz/tx/${acceptProofReceipt.hash}`);

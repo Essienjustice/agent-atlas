@@ -27,6 +27,8 @@ export default function JobsClient({ initialJobs, agents }) {
   const [walletAddress, setWalletAddress] = useState("");
   const [walletChainId, setWalletChainId] = useState("");
   const [waitingForIndex, setWaitingForIndex] = useState(false);
+  const [expandedOutput, setExpandedOutput] = useState(null);
+  const [aiOutputs, setAiOutputs] = useState({});
 
   const selectedAgent = agents.find((a) => Number(a.id) === Number(agentId));
   const ownsSelectedAgent = !walletAddress || !selectedAgent?.owner || selectedAgent.owner.toLowerCase() === walletAddress.toLowerCase();
@@ -84,6 +86,25 @@ export default function JobsClient({ initialJobs, agents }) {
       setJobs(await api("/jobs"));
     } catch {
       setJobs(await api("/jobs", { fallback: SEED_JOBS }));
+    }
+  }
+
+  async function fetchAiOutput(jobId) {
+    if (aiOutputs[jobId]) {
+      setExpandedOutput(expandedOutput === jobId ? null : jobId);
+      return;
+    }
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "https://agent-atlas.up.railway.app"}/outputs/${jobId}`);
+      if (!res.ok) {
+        addEvent("No AI Output", `Job #${jobId} has no stored AI output yet`);
+        return;
+      }
+      const data = await res.json();
+      setAiOutputs(prev => ({ ...prev, [jobId]: data }));
+      setExpandedOutput(jobId);
+    } catch (err) {
+      addEvent("Fetch Failed", err.message);
     }
   }
 
@@ -323,44 +344,105 @@ export default function JobsClient({ initialJobs, agents }) {
                 </tr>
               ) : (
                 jobs.map(job => (
-                  <tr key={job.id}>
-                    <td>
-                      <strong>#{job.id} {job.description}</strong>
-                      <div className="muted" style={{ fontSize: "0.8rem", marginTop: 2 }}>
-                        {job.reward > 0 ? `${job.reward} MNT reward` : "Testnet job"}
-                        {job.proof?.transactionUrl && (
-                          <> · <a href={job.proof.transactionUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--purple-light)" }}>View proof →</a></>
-                        )}
-                      </div>
-                    </td>
-                    <td><StatusBadge status={job.status} /></td>
-                    <td>
-                      {job.status === "OPEN" && (
-                        <button className="button secondary" disabled={ownerActionDisabled} onClick={() => acceptJob(job.id)}>
-                          <Play size={16} /> Assign Agent
-                        </button>
-                      )}
-                      {job.status === "ASSIGNED" && (
-                        <div className="toolbar" style={{ gap: 6 }}>
-                          <button className="button success" disabled={busy || !ownsAgent(job.assignedAgentId)} onClick={() => submitProof(job.id)}>
-                            <Upload size={16} /> Submit Proof
-                          </button>
-                          {job.hasSubmittedProof ? (
-                            <button className="button success" disabled={busy || !isJobCreator(job)} onClick={() => acceptProof(job.id)}>
-                              <CheckCircle size={16} /> Accept
-                            </button>
-                          ) : (
-                            <span className="muted" style={{ fontSize: "0.8rem" }}>Awaiting proof</span>
+                  <>
+                    <tr key={job.id}>
+                      <td>
+                        <strong>#{job.id} {job.description}</strong>
+                        <div className="muted" style={{ fontSize: "0.8rem", marginTop: 2 }}>
+                          {job.reward > 0 ? `${job.reward} MNT reward` : "Testnet job"}
+                          {job.proof?.transactionUrl && (
+                            <> · <a href={job.proof.transactionUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--purple-light)" }}>View proof →</a></>
                           )}
-                          <button className="button secondary" disabled={busy || !job.hasSubmittedProof || !isJobCreator(job)} onClick={() => markFailed(job.id)}>
-                            <XCircle size={16} />
-                          </button>
                         </div>
-                      )}
-                      {job.status === "COMPLETED" && <CheckCircle color="#0f8f68" size={20} />}
-                      {job.status === "FAILED" && <XCircle color="#b42318" size={20} />}
-                    </td>
-                  </tr>
+                      </td>
+                      <td><StatusBadge status={job.status} /></td>
+                      <td>
+                        {job.status === "OPEN" && (
+                          <button className="button secondary" disabled={ownerActionDisabled} onClick={() => acceptJob(job.id)}>
+                            <Play size={16} /> Assign Agent
+                          </button>
+                        )}
+                        {job.status === "ASSIGNED" && (
+                          <div className="toolbar" style={{ gap: 6 }}>
+                            <button className="button success" disabled={busy || !ownsAgent(job.assignedAgentId)} onClick={() => submitProof(job.id)}>
+                              <Upload size={16} /> Submit Proof
+                            </button>
+                            {job.hasSubmittedProof ? (
+                              <button className="button success" disabled={busy || !isJobCreator(job)} onClick={() => acceptProof(job.id)}>
+                                <CheckCircle size={16} /> Accept
+                              </button>
+                            ) : (
+                              <span className="muted" style={{ fontSize: "0.8rem" }}>Awaiting proof</span>
+                            )}
+                            <button className="button secondary" disabled={busy || !job.hasSubmittedProof || !isJobCreator(job)} onClick={() => markFailed(job.id)}>
+                              <XCircle size={16} />
+                            </button>
+                          </div>
+                        )}
+                        {job.status === "COMPLETED" && <CheckCircle color="#0f8f68" size={20} />}
+                        {job.status === "FAILED" && <XCircle color="#b42318" size={20} />}
+                      </td>
+                    </tr>
+                    {job.status === "COMPLETED" && (
+                      <>
+                        <tr key={`${job.id}-output-toggle`}>
+                          <td colSpan="3" style={{ paddingTop: 0, paddingBottom: 4 }}>
+                            <button
+                              onClick={() => fetchAiOutput(job.id)}
+                              style={{
+                                background: "none",
+                                border: "none",
+                                color: "var(--purple-light)",
+                                cursor: "pointer",
+                                fontSize: "0.8rem",
+                                padding: "4px 0",
+                                textDecoration: "underline"
+                              }}
+                            >
+                              {expandedOutput === job.id ? "Hide AI Output" : "View AI Output"}
+                            </button>
+                          </td>
+                        </tr>
+                        {expandedOutput === job.id && aiOutputs[job.id] && (
+                          <tr key={`${job.id}-output`}>
+                            <td colSpan="3" style={{ paddingTop: 0 }}>
+                              <div style={{
+                                background: "var(--bg-primary)",
+                                border: "1px solid var(--border-color)",
+                                borderRadius: "8px",
+                                padding: "16px",
+                                fontSize: "0.8rem"
+                              }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
+                                  <span style={{ color: "var(--purple-light)", fontWeight: 600 }}>
+                                    {aiOutputs[job.id].agentName} · {aiOutputs[job.id].model}
+                                  </span>
+                                  <span style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                                    {aiOutputs[job.id].outputLength?.toLocaleString()} chars ·{" "}
+                                    <a href={`https://sepolia.mantlescan.xyz/tx/${aiOutputs[job.id].acceptTx}`}
+                                      target="_blank" rel="noopener noreferrer"
+                                      style={{ color: "var(--purple-light)" }}>
+                                      Accepted submission on Mantle →
+                                    </a>
+                                  </span>
+                                </div>
+                                <div style={{
+                                  whiteSpace: "pre-wrap",
+                                  color: "var(--text-secondary)",
+                                  lineHeight: 1.6,
+                                  maxHeight: "400px",
+                                  overflowY: "auto",
+                                  fontFamily: "inherit"
+                                }}>
+                                  {aiOutputs[job.id].aiOutput}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </>
+                    )}
+                  </>
                 ))
               )}
             </tbody>
