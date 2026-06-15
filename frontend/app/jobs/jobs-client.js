@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle, Play, Plus, Upload, XCircle } from "lucide-react";
 import { api } from "../../lib/api";
 import { ChainLink } from "../../components/ChainLink";
@@ -33,6 +33,47 @@ export default function JobsClient({ initialJobs, agents }) {
   const ownsSelectedAgent = !walletAddress || !selectedAgent?.owner || selectedAgent.owner.toLowerCase() === walletAddress.toLowerCase();
   const ownerActionDisabled = busy || !ownsSelectedAgent;
   const agentById = new Map(agents.map((agent) => [Number(agent.id), agent]));
+  const isMantleSepolia = walletChainId && walletChainId.toLowerCase() === MANTLE_SEPOLIA_CHAIN.chainId.toLowerCase();
+
+  useEffect(() => {
+    if (!window.ethereum) return;
+
+    let mounted = true;
+
+    async function hydrateWallet() {
+      try {
+        const accounts = await window.ethereum.request({ method: "eth_accounts" });
+        const chainId = await window.ethereum.request({ method: "eth_chainId" });
+        if (!mounted) return;
+        if (accounts.length > 0) setWalletAddress(accounts[0]);
+        setWalletChainId(chainId);
+      } catch (error) {
+        console.warn("Wallet state unavailable.", error);
+      }
+    }
+
+    function handleAccountsChanged(accounts) {
+      if (accounts.length > 0) {
+        setWalletAddress(accounts[0]);
+      } else {
+        setWalletAddress("");
+      }
+    }
+
+    function handleChainChanged() {
+      window.location.reload();
+    }
+
+    hydrateWallet();
+    window.ethereum.on("accountsChanged", handleAccountsChanged);
+    window.ethereum.on("chainChanged", handleChainChanged);
+
+    return () => {
+      mounted = false;
+      window.ethereum.removeListener?.("accountsChanged", handleAccountsChanged);
+      window.ethereum.removeListener?.("chainChanged", handleChainChanged);
+    };
+  }, []);
 
   function ownsAgent(agentIdValue) {
     const agent = agentById.get(Number(agentIdValue));
@@ -177,8 +218,17 @@ export default function JobsClient({ initialJobs, agents }) {
             <select className="select" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
               {agents.map((agent) => <option value={agent.id} key={agent.id}>{agent.name}</option>)}
             </select>
-            <button className="button secondary" type="button" disabled={busy} onClick={connectWallet}>Connect Wallet</button>
-            <button className="button secondary" type="button" disabled={busy} onClick={addMantleSepoliaToWallet}>+ Add Mantle Sepolia</button>
+            {walletAddress ? (
+              <div className="pill">
+                <span className="status COMPLETED">{shortAddress(walletAddress)}</span>
+              </div>
+            ) : (
+              <button className="button secondary" type="button" disabled={busy} onClick={connectWallet}>Connect Wallet</button>
+            )}
+            {walletAddress && !isMantleSepolia && (
+              <button className="button secondary" type="button" disabled={busy} onClick={addMantleSepoliaToWallet}>+ Add Mantle Sepolia</button>
+            )}
+            {walletAddress && isMantleSepolia && <span className="muted">Mantle Sepolia ✓</span>}
           </div>
           <p className="wallet-helper">Requires MetaMask on Mantle Sepolia (Chain ID 5003)</p>
           {walletAddress && walletChainId && walletChainId.toLowerCase() !== MANTLE_SEPOLIA_CHAIN.chainId.toLowerCase() && (
