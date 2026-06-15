@@ -5,14 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import Nav from "../../components/Nav";
 import { ChainLink } from "../../components/ChainLink";
 import { API_URL } from "../../lib/api";
-
-const MANTLE_SEPOLIA_CHAIN = {
-  chainId: "0x138B",
-  chainName: "Mantle Sepolia",
-  nativeCurrency: { name: "MNT", symbol: "MNT", decimals: 18 },
-  rpcUrls: ["https://rpc.sepolia.mantle.xyz"],
-  blockExplorerUrls: ["https://sepolia.mantlescan.xyz"]
-};
+import {
+  MANTLE_SEPOLIA_CHAIN,
+  SUPPORTED_WALLETS,
+  getPreferredProvider,
+  getWalletLabel,
+  requestWalletOnMantle
+} from "../../lib/wallet";
 
 const ACTIONS = {
   registerAgent: "registerAgent",
@@ -25,6 +24,8 @@ const ACTIONS = {
 export default function ProtocolPage() {
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
+  const [walletProvider, setWalletProvider] = useState(null);
+  const [walletName, setWalletName] = useState("");
   const [busyStep, setBusyStep] = useState("");
   const [agentName, setAgentName] = useState("");
   const [agentSkill, setAgentSkill] = useState("");
@@ -44,14 +45,17 @@ export default function ProtocolPage() {
   }, [workText]);
 
   useEffect(() => {
-    if (!window.ethereum) return;
+    const provider = getPreferredProvider();
+    if (!provider) return;
+    setWalletProvider(provider);
+    setWalletName(getWalletLabel(provider));
 
     let mounted = true;
 
     async function hydrate() {
       try {
-        const accounts = await window.ethereum.request({ method: "eth_accounts" });
-        const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
+        const accounts = await provider.request({ method: "eth_accounts" });
+        const currentChainId = await provider.request({ method: "eth_chainId" });
         if (!mounted) return;
         if (accounts.length > 0) setAccount(accounts[0]);
         setChainId(currentChainId);
@@ -69,13 +73,13 @@ export default function ProtocolPage() {
     }
 
     hydrate();
-    window.ethereum.on("accountsChanged", onAccountsChanged);
-    window.ethereum.on("chainChanged", onChainChanged);
+    provider.on?.("accountsChanged", onAccountsChanged);
+    provider.on?.("chainChanged", onChainChanged);
 
     return () => {
       mounted = false;
-      window.ethereum.removeListener?.("accountsChanged", onAccountsChanged);
-      window.ethereum.removeListener?.("chainChanged", onChainChanged);
+      provider.removeListener?.("accountsChanged", onAccountsChanged);
+      provider.removeListener?.("chainChanged", onChainChanged);
     };
   }, []);
 
@@ -100,32 +104,30 @@ export default function ProtocolPage() {
   const isMantle = chainId && chainId.toLowerCase() === MANTLE_SEPOLIA_CHAIN.chainId.toLowerCase();
 
   async function ensureWallet() {
-    if (!window.ethereum) {
-      throw new Error("Please install MetaMask to use this feature");
-    }
-    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    const from = accounts[0];
-    const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
+    const provider = walletProvider || getPreferredProvider();
+    const { from, chainId: currentChainId, provider: connectedProvider } = await requestWalletOnMantle(provider);
     setAccount(from);
     setChainId(currentChainId);
-    if (currentChainId.toLowerCase() !== MANTLE_SEPOLIA_CHAIN.chainId.toLowerCase()) {
-      throw new Error("Please switch to Mantle Sepolia (Chain ID 5003)");
-    }
-    return from;
+    setWalletProvider(connectedProvider);
+    setWalletName(getWalletLabel(connectedProvider));
+    return { from, provider: connectedProvider };
   }
 
   async function switchNetwork() {
-    if (!window.ethereum) return;
+    const provider = walletProvider || getPreferredProvider();
+    if (!provider) return;
     try {
-      await window.ethereum.request({
+      await provider.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: MANTLE_SEPOLIA_CHAIN.chainId }]
       });
-      const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
+      const currentChainId = await provider.request({ method: "eth_chainId" });
       setChainId(currentChainId);
+      setWalletProvider(provider);
+      setWalletName(getWalletLabel(provider));
     } catch (error) {
       if (error?.code === 4902) {
-        await window.ethereum.request({
+        await provider.request({
           method: "wallet_addEthereumChain",
           params: [MANTLE_SEPOLIA_CHAIN]
         });
@@ -137,7 +139,7 @@ export default function ProtocolPage() {
     setBusyStep(step);
     setStepStatus(step, { error: "", message: "Preparing transaction..." });
     try {
-      const from = await ensureWallet();
+      const { from, provider } = await ensureWallet();
       const prepared = await fetch(`${API_URL}/protocol/v1/transactions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,8 +150,8 @@ export default function ProtocolPage() {
         throw new Error(body.error || "Backend did not return a transaction");
       }
 
-      setStepStatus(step, { error: "", message: "Confirm the transaction in MetaMask." });
-      const hash = await window.ethereum.request({
+      setStepStatus(step, { error: "", message: "Confirm the transaction in your wallet." });
+      const hash = await provider.request({
         method: "eth_sendTransaction",
         params: [{ from, ...body.transaction }]
       });
@@ -297,7 +299,7 @@ export default function ProtocolPage() {
             <h1>Protocol Lifecycle</h1>
             <p className="muted">Complete all 5 steps to test the Agent Atlas protocol on Mantle Sepolia.</p>
           </div>
-          <WalletState account={account} isMantle={isMantle} switchNetwork={switchNetwork} />
+          <WalletState account={account} isMantle={isMantle} walletName={walletName} switchNetwork={switchNetwork} />
         </div>
 
         <StepCard
@@ -374,11 +376,12 @@ export default function ProtocolPage() {
   );
 }
 
-function WalletState({ account, isMantle, switchNetwork }) {
-  if (!account) return <span className="pill">Wallet not connected</span>;
+function WalletState({ account, isMantle, walletName, switchNetwork }) {
+  if (!account) return <span className="pill">Connect {SUPPORTED_WALLETS}</span>;
   return (
     <div className="pill">
       <span>{shortAddress(account)}</span>
+      {walletName && <span className="muted" style={{ marginLeft: 6 }}>{walletName}</span>}
       {isMantle ? <span className="muted" style={{ marginLeft: 6 }}>Mantle Sepolia connected</span> : <button className="button secondary" type="button" onClick={switchNetwork}>Switch Network</button>}
     </div>
   );
@@ -424,9 +427,10 @@ async function sha256Hex(value) {
 }
 
 async function waitForReceipt(hash) {
-  if (!window.ethereum) return null;
+  const provider = getPreferredProvider();
+  if (!provider) return null;
   for (let attempt = 0; attempt < 12; attempt += 1) {
-    const receipt = await window.ethereum.request({
+    const receipt = await provider.request({
       method: "eth_getTransactionReceipt",
       params: [hash]
     });
@@ -446,7 +450,7 @@ function normalizeError(error) {
   const message = error?.message || String(error);
   if (message.includes("User denied") || message.includes("user rejected")) return "Transaction cancelled.";
   if (message.includes("Please switch")) return message;
-  if (message.includes("MetaMask")) return message;
+  if (message.includes("wallet") || message.includes("Wallet")) return message;
   return message || "Transaction failed. Check that you meet the requirements for this step.";
 }
 

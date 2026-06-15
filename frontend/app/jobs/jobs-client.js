@@ -7,14 +7,13 @@ import { ChainLink } from "../../components/ChainLink";
 import LivePanel from "../../components/LivePanel";
 import { StatusBadge } from "../../components/StatusBadge";
 import { SEED_JOBS } from "../../lib/seedData";
-
-const MANTLE_SEPOLIA_CHAIN = {
-  chainId: "0x138B",
-  chainName: "Mantle Sepolia",
-  nativeCurrency: { name: "MNT", symbol: "MNT", decimals: 18 },
-  rpcUrls: ["https://rpc.sepolia.mantle.xyz"],
-  blockExplorerUrls: ["https://sepolia.mantlescan.xyz"]
-};
+import {
+  MANTLE_SEPOLIA_CHAIN,
+  SUPPORTED_WALLETS,
+  getPreferredProvider,
+  getWalletLabel,
+  requestWalletOnMantle
+} from "../../lib/wallet";
 
 export default function JobsClient({ initialJobs, agents }) {
   const [jobs, setJobs] = useState(initialJobs);
@@ -26,6 +25,8 @@ export default function JobsClient({ initialJobs, agents }) {
   const [sentTxHash, setSentTxHash] = useState(null);
   const [walletAddress, setWalletAddress] = useState("");
   const [walletChainId, setWalletChainId] = useState("");
+  const [walletProvider, setWalletProvider] = useState(null);
+  const [walletName, setWalletName] = useState("");
   const [waitingForIndex, setWaitingForIndex] = useState(false);
   const [expandedOutput, setExpandedOutput] = useState(null);
   const [aiOutputs, setAiOutputs] = useState({});
@@ -37,12 +38,15 @@ export default function JobsClient({ initialJobs, agents }) {
   const isMantleSepolia = walletChainId && walletChainId.toLowerCase() === MANTLE_SEPOLIA_CHAIN.chainId.toLowerCase();
 
   useEffect(() => {
-    if (!window.ethereum) return;
+    const provider = getPreferredProvider();
+    if (!provider) return;
+    setWalletProvider(provider);
+    setWalletName(getWalletLabel(provider));
     let mounted = true;
     async function hydrateWallet() {
       try {
-        const accounts = await window.ethereum.request({ method: "eth_accounts" });
-        const chainId = await window.ethereum.request({ method: "eth_chainId" });
+        const accounts = await provider.request({ method: "eth_accounts" });
+        const chainId = await provider.request({ method: "eth_chainId" });
         if (!mounted) return;
         if (accounts.length > 0) setWalletAddress(accounts[0]);
         setWalletChainId(chainId);
@@ -55,12 +59,12 @@ export default function JobsClient({ initialJobs, agents }) {
     }
     function handleChainChanged() { window.location.reload(); }
     hydrateWallet();
-    window.ethereum.on("accountsChanged", handleAccountsChanged);
-    window.ethereum.on("chainChanged", handleChainChanged);
+    provider.on?.("accountsChanged", handleAccountsChanged);
+    provider.on?.("chainChanged", handleChainChanged);
     return () => {
       mounted = false;
-      window.ethereum.removeListener?.("accountsChanged", handleAccountsChanged);
-      window.ethereum.removeListener?.("chainChanged", handleChainChanged);
+      provider.removeListener?.("accountsChanged", handleAccountsChanged);
+      provider.removeListener?.("chainChanged", handleChainChanged);
     };
   }, []);
 
@@ -108,20 +112,22 @@ export default function JobsClient({ initialJobs, agents }) {
     }
   }
 
-  // ONE-CLICK transaction sender - connects wallet, builds tx, sends to MetaMask in one flow
+  // ONE-CLICK transaction sender - connects wallet, builds tx, sends to the selected EVM wallet.
   async function sendTransaction(action, params) {
-    if (!window.ethereum) {
-      addEvent("Wallet Required", "Install MetaMask to interact with Mantle Sepolia");
-      window.open("https://metamask.io/download/", "_blank", "noopener");
+    const provider = walletProvider || getPreferredProvider();
+    if (!provider) {
+      addEvent("Wallet Required", `Install ${SUPPORTED_WALLETS} to interact with Mantle Sepolia`);
       return;
     }
     setBusy(true);
     try {
       // 1. Connect + switch network
       addEvent("Connecting Wallet", "Switching to Mantle Sepolia...");
-      const { from, chainId } = await requestWalletOnMantle();
+      const { from, chainId, provider: connectedProvider } = await requestWalletOnMantle(provider);
       setWalletAddress(from);
       setWalletChainId(chainId);
+      setWalletProvider(connectedProvider);
+      setWalletName(getWalletLabel(connectedProvider));
 
       // 2. Build transaction from backend
       addEvent("Building Transaction", `Preparing ${action}...`);
@@ -132,9 +138,9 @@ export default function JobsClient({ initialJobs, agents }) {
       if (!res?.transaction) throw new Error("Backend did not return a transaction");
       const tx = res.transaction;
 
-      // 3. Send to MetaMask - wallet popup appears here
-      addEvent("Sign in MetaMask", "MetaMask popup opening - please confirm the transaction");
-      const txHash = await window.ethereum.request({
+      // 3. Send to wallet - wallet popup appears here
+      addEvent("Confirm in Wallet", "Wallet confirmation opening - please approve the transaction");
+      const txHash = await connectedProvider.request({
         method: "eth_sendTransaction",
         params: [{ from, ...tx }]
       });
@@ -145,9 +151,9 @@ export default function JobsClient({ initialJobs, agents }) {
       addEvent("Transaction Submitted", txHash);
       await pollForIndexedChange(txHash);
     } catch (err) {
-      const msg = err?.message || "MetaMask rejected or network error";
+      const msg = err?.message || "Wallet rejected or network error";
       if (msg.includes("User denied") || msg.includes("user rejected")) {
-        addEvent("Rejected", "You cancelled the transaction in MetaMask");
+        addEvent("Rejected", "You cancelled the transaction in your wallet");
       } else {
         addEvent("Transaction Failed", msg);
       }
@@ -214,30 +220,33 @@ export default function JobsClient({ initialJobs, agents }) {
   }
 
   async function connectWallet() {
-    if (!window.ethereum) {
-      addEvent("Wallet Missing", "Install MetaMask to connect");
-      window.open("https://metamask.io/download/", "_blank", "noopener");
+    const provider = getPreferredProvider();
+    if (!provider) {
+      addEvent("Wallet Missing", `Install ${SUPPORTED_WALLETS} to connect`);
       return;
     }
     try {
-      const { from, chainId } = await requestWalletOnMantle();
+      const { from, chainId, provider: connectedProvider } = await requestWalletOnMantle(provider);
       setWalletAddress(from);
       setWalletChainId(chainId);
-      addEvent("Wallet Connected", `${shortAddress(from)} on Mantle Sepolia`);
+      setWalletProvider(connectedProvider);
+      setWalletName(getWalletLabel(connectedProvider));
+      addEvent("Wallet Connected", `${getWalletLabel(connectedProvider)} ${shortAddress(from)} on Mantle Sepolia`);
     } catch (err) {
-      addEvent("Connection Failed", err?.message || "MetaMask rejected");
+      addEvent("Connection Failed", err?.message || "Wallet rejected");
     }
   }
 
   async function addMantleSepoliaToWallet() {
-    if (!window.ethereum) return;
+    const provider = walletProvider || getPreferredProvider();
+    if (!provider) return;
     try {
-      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [MANTLE_SEPOLIA_CHAIN] });
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      await provider.request({ method: "wallet_addEthereumChain", params: [MANTLE_SEPOLIA_CHAIN] });
+      const chainId = await provider.request({ method: "eth_chainId" });
       setWalletChainId(chainId);
-      addEvent("Network Added", "Mantle Sepolia added to MetaMask");
+      addEvent("Network Added", `Mantle Sepolia added to ${getWalletLabel(provider)}`);
     } catch (err) {
-      addEvent("Network Add Failed", err?.message || "MetaMask rejected");
+      addEvent("Network Add Failed", err?.message || "Wallet rejected");
     }
   }
 
@@ -296,6 +305,7 @@ export default function JobsClient({ initialJobs, agents }) {
             {walletAddress ? (
               <div className="pill">
                 <span className="status COMPLETED">{shortAddress(walletAddress)}</span>
+                {walletName && <span className="muted" style={{ marginLeft: 6 }}>{walletName}</span>}
                 {isMantleSepolia && <span className="muted" style={{ marginLeft: 6 }}>Mantle Sepolia connected</span>}
               </div>
             ) : (
@@ -313,9 +323,12 @@ export default function JobsClient({ initialJobs, agents }) {
           {!walletAddress && (
             <div style={{ padding: "16px", background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)", borderRadius: "10px", margin: "12px 0", textAlign: "center" }}>
               <p style={{ color: "var(--text-secondary)", marginBottom: "10px", fontSize: "0.875rem" }}>
-                Connect MetaMask to assign agents, submit proofs, and verify work on Mantle Sepolia.
+                Connect an injected EVM wallet to assign agents, submit proofs, and accept submissions on Mantle Sepolia.
               </p>
-              <button className="button" onClick={connectWallet}>Connect MetaMask</button>
+              <p className="muted" style={{ marginBottom: "10px", fontSize: "0.75rem" }}>
+                Supports {SUPPORTED_WALLETS}.
+              </p>
+              <button className="button" onClick={connectWallet}>Connect EVM Wallet</button>
             </div>
           )}
 
@@ -505,25 +518,4 @@ async function sha256Hex(value) {
 
 function shortAddress(value = "") {
   return value ? `${value.slice(0, 6)}...${value.slice(-4)}` : "";
-}
-
-async function requestWalletOnMantle() {
-  const [from] = await window.ethereum.request({ method: "eth_requestAccounts" });
-  try {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: MANTLE_SEPOLIA_CHAIN.chainId }]
-    });
-  } catch (switchError) {
-    if (switchError?.code === 4902) {
-      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [MANTLE_SEPOLIA_CHAIN] });
-    } else {
-      throw switchError;
-    }
-  }
-  const chainId = await window.ethereum.request({ method: "eth_chainId" });
-  if (chainId.toLowerCase() !== MANTLE_SEPOLIA_CHAIN.chainId.toLowerCase()) {
-    throw new Error("Wallet is not connected to Mantle Sepolia");
-  }
-  return { from, chainId };
 }
