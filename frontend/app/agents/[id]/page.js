@@ -1,4 +1,7 @@
 import Nav from "../../../components/Nav";
+import { ChainLink } from "../../../components/ChainLink";
+import { StatusBadge } from "../../../components/StatusBadge";
+import { TimeAgo } from "../../../components/TimeAgo";
 import { api } from "../../../lib/api";
 
 export default async function AgentProfile({ params }) {
@@ -50,7 +53,7 @@ export default async function AgentProfile({ params }) {
                   <td>{job?.description || `Task ${proof.jobId}`}</td>
                   <td><code>{shortHash(proof.resultHash || proof.reasonHash)}</code></td>
                   <td>{proof.verificationStatus}</td>
-                  <td>{agent.source !== "demo" && proof.transactionUrl ? <a href={proof.transactionUrl} target="_blank">Mantle tx</a> : <span className="muted">{agent.source === "demo" ? "Demo Snapshot" : "Indexed proof"}</span>}</td>
+                  <td>{agent.source !== "demo" && proof.transactionHash ? <ChainLink value={proof.transactionHash} type="tx" /> : agent.source !== "demo" && proof.transactionUrl ? <a className="tx-link" href={proof.transactionUrl} target="_blank" rel="noopener noreferrer">Mantle tx</a> : <span className="muted">{agent.source === "demo" ? "Demo Snapshot" : "Indexed proof"}</span>}</td>
                 </tr>
               ))}
               {(agent.recentSubmissions || agent.recentVerifiedJobs).length === 0 && <tr><td className="muted" colSpan="4">Accepted proof submissions appear after chain events are indexed.</td></tr>}
@@ -77,8 +80,8 @@ export default async function AgentProfile({ params }) {
                 <strong>Score {proof.scoreBefore ?? 0} → {proof.scoreAfter ?? agent.score?.reliabilityScore ?? 0}</strong>
                 {proof.resultHash && <div className="muted">Proof Hash: <code>{shortHash(proof.resultHash)}</code></div>}
                 {proof.reasonHash && <div className="muted">Failure Hash: <code>{shortHash(proof.reasonHash)}</code></div>}
-                <div className="muted">Indexed: {proof.verificationBlock || proof.failureBlock || proof.createdAt}</div>
-                <div><span className="status COMPLETED">{proof.verificationStatus || "VERIFIED"}</span></div>
+                <div className="muted">Indexed: {proof.verificationBlock || proof.failureBlock || (proof.createdAt ? <TimeAgo ts={proof.createdAt} /> : "")}</div>
+                <div><StatusBadge status={proof.verificationStatus || "COMPLETED"} /></div>
                 <div className="trust-timeline">
                   <span>Proof Submitted</span>
                   <span>↓</span>
@@ -88,9 +91,10 @@ export default async function AgentProfile({ params }) {
                   <span>↓</span>
                   <span>Leaderboard Updated</span>
                 </div>
-                {agent.source !== "demo" && proof.transactionHash && <div className="muted">Tx: <code>{shortHash(proof.transactionHash)}</code></div>}
-                {agent.source !== "demo" && proof.transactionUrl && <a href={proof.transactionUrl} target="_blank">Mantle transaction</a>}
-                {agent.source !== "demo" && proof.contractUrl && <div><a href={proof.contractUrl} target="_blank">Verifier contract</a></div>}
+                {agent.source !== "demo" && proof.transactionHash && <div className="muted">Tx: <ChainLink value={proof.transactionHash} type="tx" /></div>}
+                {agent.source !== "demo" && !proof.transactionHash && proof.transactionUrl && <a className="tx-link" href={proof.transactionUrl} target="_blank" rel="noopener noreferrer">Mantle transaction</a>}
+                {agent.source !== "demo" && proof.contractAddress && <div><ChainLink value={proof.contractAddress} type="address" label="Verifier contract" /></div>}
+                {agent.source !== "demo" && !proof.contractAddress && proof.contractUrl && <div><a className="tx-link" href={proof.contractUrl} target="_blank" rel="noopener noreferrer">Verifier contract</a></div>}
               </div>
             ))}
             {agent.proofs.length === 0 && <p className="muted">Proof hashes appear after accepted submissions are indexed.</p>}

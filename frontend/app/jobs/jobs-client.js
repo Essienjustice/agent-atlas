@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { CheckCircle, Play, Plus, Upload, XCircle } from "lucide-react";
 import { api } from "../../lib/api";
+import { ChainLink } from "../../components/ChainLink";
 import LivePanel from "../../components/LivePanel";
+import { StatusBadge } from "../../components/StatusBadge";
 import { SEED_JOBS } from "../../lib/seedData";
 
 const MANTLE_SEPOLIA_CHAIN = {
@@ -183,7 +185,7 @@ export default function JobsClient({ initialJobs, agents }) {
             <p className="muted">Wrong network. Agent Atlas runs on Mantle Sepolia. Use Connect Wallet again to switch.</p>
           )}
           {walletAddress && selectedAgent?.owner && !ownsSelectedAgent && (
-            <p className="muted">Owner wallet required for this agent. Connected: <code>{shortAddress(walletAddress)}</code>. Owner: <code>{shortAddress(selectedAgent.owner)}</code>.</p>
+            <p className="muted">Owner wallet required for this agent. Connected: <AddressLink address={walletAddress} />. Owner: <AddressLink address={selectedAgent.owner} />.</p>
           )}
           {waitingForIndex && <p className="muted">Waiting for indexed confirmation...</p>}
           <table className="table">
@@ -204,7 +206,7 @@ export default function JobsClient({ initialJobs, agents }) {
                       <strong>{job.description}</strong>
                       <div className="muted">{job.reward} MNT</div>
                     </td>
-                    <td><span className={`status ${job.status}`}>{job.status}</span></td>
+                    <td><StatusBadge status={job.status} /></td>
                     <td>
                       {job.status === "OPEN" && (
                         <button className="button secondary" disabled={ownerActionDisabled} title={ownsSelectedAgent ? "Accept with selected agent owner wallet" : "Connect the selected agent owner wallet"} onClick={() => acceptJob(job.id)}><Play size={16} />Assign Agent</button>
@@ -248,7 +250,7 @@ export default function JobsClient({ initialJobs, agents }) {
             <div className="card" style={{ marginTop: 18 }}>
               <h2>Prepared Transaction</h2>
               <button className="button" disabled={busy} onClick={sendPreparedTransaction}>Sign And Send</button>
-              {sentTxHash && <p className="muted">Submitted: <code>{sentTxHash}</code></p>}
+              {sentTxHash && <p className="muted">Submitted: <ChainLink value={sentTxHash} type="tx" /></p>}
               <pre>{JSON.stringify(preparedTx, null, 2)}</pre>
             </div>
           )}
@@ -344,6 +346,11 @@ async function sha256Hex(value) {
 
 function shortAddress(value = "") {
   return value ? `${value.slice(0, 6)}...${value.slice(-4)}` : "";
+}
+
+function AddressLink({ address }) {
+  if (!address) return null;
+  return <ChainLink value={address} type="address" />;
 }
 
 async function requestWalletOnMantle() {

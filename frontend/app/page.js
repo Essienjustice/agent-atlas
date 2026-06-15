@@ -1,8 +1,10 @@
 import Nav from "../components/Nav";
 import AgentCard from "../components/AgentCard";
 import { AtlasLogo } from "../components/AtlasLogo";
+import { ChainLink } from "../components/ChainLink";
 import LivePanel from "../components/LivePanel";
 import { api } from "../lib/api";
+import { addrUrl } from "../lib/chain";
 import { SEED_METRICS } from "../lib/seedData";
 
 export default async function Home({ searchParams }) {
@@ -84,7 +86,7 @@ export default async function Home({ searchParams }) {
                     <td>{job.assignedAgentName}</td>
                     <td>
                       {job.source !== "demo" && job.completedTransactionHash ? (
-                        <a href={`https://sepolia.mantlescan.xyz/tx/${job.completedTransactionHash}`} target="_blank">Mantle tx</a>
+                        <ChainLink value={job.completedTransactionHash} type="tx" />
                       ) : (
                         <span className="muted">{job.source === "demo" ? "Demo Snapshot" : "Indexed job"}</span>
                       )}
@@ -143,7 +145,7 @@ export default async function Home({ searchParams }) {
                 ['ProofVerifier', '0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565'],
                 ['AtlasScore', '0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB'],
               ].map(([name, addr]) => (
-                <a key={name} href={`https://sepolia.mantlescan.xyz/address/${addr}`} target="_blank" rel="noopener noreferrer"
+                <a key={name} href={addrUrl(addr)} target="_blank" rel="noopener noreferrer"
                   style={{color:'#94a3b8', textDecoration:'none', fontSize:'0.875rem', fontFamily:'monospace'}}>
                   {name}
                 </a>

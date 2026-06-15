@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { API_URL, api } from "../lib/api";
+import { ChainLink } from "./ChainLink";
+import { TimeAgo } from "./TimeAgo";
 import { SEED_EVENTS } from "../lib/seedData";
 
 export default function LivePanel({ compact = false }) {
@@ -84,7 +86,7 @@ export default function LivePanel({ compact = false }) {
             <strong className={`event-badge ${event.type}`}>{event.type}</strong>
             {isDemo && <span className="badge demo">Demo Snapshot</span>}
             {event.agent && <div className="muted">{event.agent}</div>}
-            <div className="muted">{formatEventTime(event.timestamp)}</div>
+            <div><TimeAgo ts={event.timestamp} /></div>
             {["ProofVerified", "ProofFailed"].includes(event.type) && (
               <div className="trust-timeline horizontal">
                 <span>{event.type === "ProofFailed" ? "Failure Marked" : "Proof Submitted"}</span>
@@ -103,29 +105,22 @@ export default function LivePanel({ compact = false }) {
             )}
             {event.payload?.resultHash && <div><code>{event.payload.resultHash}</code></div>}
             {event.payload?.reasonHash && <div><code>{event.payload.reasonHash}</code></div>}
-            {event.payload?.verificationTimestamp && <div className="muted">Verified: {event.payload.verificationTimestamp}</div>}
+            {event.payload?.verificationTimestamp && <div className="muted">Verified: <TimeAgo ts={event.payload.verificationTimestamp} /></div>}
             {!isDemo && event.payload?.transactionHash && (
               <div className="muted">
-                Tx: <a className="tx-link" href={`https://sepolia.mantlescan.xyz/tx/${event.payload.transactionHash}`} target="_blank" rel="noopener noreferrer">
-                  {event.payload.transactionHash.slice(0, 10)}...{event.payload.transactionHash.slice(-6)}
-                </a>
+                Tx: <ChainLink value={event.payload.transactionHash} type="tx" />
               </div>
             )}
             {!isDemo && event.payload?.transactionUrl && <span className="badge">Mantle Event</span>}
-            {!isDemo && event.payload?.transactionUrl && <a href={event.payload.transactionUrl} target="_blank">View Mantle transaction</a>}
-            {!isDemo && event.payload?.contractUrl && <div><a href={event.payload.contractUrl} target="_blank">Verifier contract</a></div>}
+            {!isDemo && event.payload?.transactionUrl && <a className="tx-link" href={event.payload.transactionUrl} target="_blank" rel="noopener noreferrer">View Mantle transaction</a>}
+            {!isDemo && event.payload?.contractAddress && <div><ChainLink value={event.payload.contractAddress} type="address" label="Verifier contract" /></div>}
+            {!isDemo && !event.payload?.contractAddress && event.payload?.contractUrl && <div><a className="tx-link" href={event.payload.contractUrl} target="_blank" rel="noopener noreferrer">Verifier contract</a></div>}
             {!isDemo && !event.payload?.resultHash && !event.payload?.transactionUrl && <pre>{JSON.stringify(event.payload, null, 2)}</pre>}
           </div>
         );})}
       </div>
     </section>
   );
-}
-
-function formatEventTime(value) {
-  if (!value) return "";
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleTimeString();
 }
 
 function isDemoEvent(event) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { API_URL, api } from "../lib/api";
+import { addrUrl } from "../lib/chain";
 import { SEED_AGENTS } from "../lib/seedData";
 
 export default function LeaderboardClient({ initialAgents, skill = "" }) {
@@ -87,7 +88,11 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
               <tr key={agent.id}>
                 <td><strong className={rankClass(agent.globalRank)}>#{agent.globalRank}</strong></td>
                 <td>
-                  <a href={`/agents/${agent.id}`}><strong>{agent.name}</strong></a>
+                  {agent.address ? (
+                    <a className="tx-link" href={addrUrl(agent.address)} target="_blank" rel="noopener noreferrer"><strong>{agent.name} â†—</strong></a>
+                  ) : (
+                    <a href={`/agents/${agent.id}`}><strong>{agent.name}</strong></a>
+                  )}
                   <div>{agent.skills.map((skillName) => <span className="pill" key={skillName}>{skillName}</span>)}</div>
                 </td>
                 <td><span className="score-badge">{agent.score.reliabilityScore}</span>{agent.source === "demo" && <span className="badge demo">Demo</span>}</td>
