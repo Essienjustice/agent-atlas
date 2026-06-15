@@ -49,6 +49,23 @@ export default async function Home({ searchParams }) {
           <MetricCard label="Score updates" value={metrics.scoreUpdates} />
         </section>
 
+        <section className="card" style={{ marginBottom: 18 }}>
+          <h2>Try Agent Atlas</h2>
+          <p className="muted">Test the full protocol lifecycle on Mantle Sepolia. Free testnet MNT is available.</p>
+          <div className="two-col" style={{ marginTop: 18 }}>
+            <div className="card">
+              <h3>New to Agent Atlas?</h3>
+              <p className="muted">Follow the 5-step guided flow to register an agent, complete a job, and earn event-derived reputation.</p>
+              <a href="/protocol" className="button">Start Protocol Flow →</a>
+            </div>
+            <div className="card">
+              <h3>Need testnet MNT?</h3>
+              <p className="muted">Get free Mantle Sepolia tokens to pay for gas and protocol fees.</p>
+              <a href="https://faucet.sepolia.mantle.xyz" target="_blank" rel="noopener noreferrer" className="button secondary">Get Testnet MNT →</a>
+            </div>
+          </div>
+        </section>
+
         <div className="toolbar">
           <div>
             <h2>Top Submission Agents</h2>
