@@ -90,6 +90,10 @@ textarea::placeholder {
   gap: 18px;
 }
 
+.nav-toggle {
+  display: none;
+}
+
 .nav a {
   color: #cbd5e1;
   font-size: 14px;
@@ -622,7 +626,7 @@ code {
   }
 
   .container {
-    padding: 20px;
+    padding: 16px;
   }
 
   .hero,
@@ -630,6 +634,72 @@ code {
   .two-col,
   .metric-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding: 16px 0 10px;
+    gap: 18px;
+  }
+
+  .metric-grid {
+    gap: 10px;
+    margin: 12px 0 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric-card {
+    padding: 16px;
+  }
+
+  .metric-number {
+    font-size: 28px;
+  }
+
+  .toolbar {
+    margin: 14px 0;
+  }
+
+  .topbar {
+    position: relative;
+  }
+
+  .nav-toggle {
+    align-items: center;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    cursor: pointer;
+    display: inline-flex;
+    font-size: 14px;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 12px;
+  }
+
+  .nav {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    display: none;
+    gap: 12px;
+    left: 16px;
+    padding: 14px;
+    position: absolute;
+    right: 16px;
+    top: 64px;
+    z-index: 50;
+  }
+
+  .nav.open {
+    display: flex;
+  }
+
+  .nav-overlay {
+    background: rgba(8, 9, 14, 0.45);
+    inset: 0;
+    position: fixed;
+    z-index: 40;
   }
 
 }
