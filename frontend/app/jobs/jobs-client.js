@@ -23,23 +23,20 @@ export default function JobsClient({ initialJobs, agents }) {
   const [agentId, setAgentId] = useState(agents[0]?.id || "");
   const [busy, setBusy] = useState(false);
   const [optimisticEvents, setOptimisticEvents] = useState([]);
-  const [preparedTx, setPreparedTx] = useState(null);
   const [sentTxHash, setSentTxHash] = useState(null);
   const [walletAddress, setWalletAddress] = useState("");
   const [walletChainId, setWalletChainId] = useState("");
   const [waitingForIndex, setWaitingForIndex] = useState(false);
 
-  const selectedAgent = agents.find((agent) => Number(agent.id) === Number(agentId));
+  const selectedAgent = agents.find((a) => Number(a.id) === Number(agentId));
   const ownsSelectedAgent = !walletAddress || !selectedAgent?.owner || selectedAgent.owner.toLowerCase() === walletAddress.toLowerCase();
   const ownerActionDisabled = busy || !ownsSelectedAgent;
-  const agentById = new Map(agents.map((agent) => [Number(agent.id), agent]));
+  const agentById = new Map(agents.map((a) => [Number(a.id), a]));
   const isMantleSepolia = walletChainId && walletChainId.toLowerCase() === MANTLE_SEPOLIA_CHAIN.chainId.toLowerCase();
 
   useEffect(() => {
     if (!window.ethereum) return;
-
     let mounted = true;
-
     async function hydrateWallet() {
       try {
         const accounts = await window.ethereum.request({ method: "eth_accounts" });
@@ -47,27 +44,17 @@ export default function JobsClient({ initialJobs, agents }) {
         if (!mounted) return;
         if (accounts.length > 0) setWalletAddress(accounts[0]);
         setWalletChainId(chainId);
-      } catch (error) {
-        console.warn("Wallet state unavailable.", error);
+      } catch (e) {
+        console.warn("Wallet state unavailable.", e);
       }
     }
-
     function handleAccountsChanged(accounts) {
-      if (accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-      } else {
-        setWalletAddress("");
-      }
+      setWalletAddress(accounts.length > 0 ? accounts[0] : "");
     }
-
-    function handleChainChanged() {
-      window.location.reload();
-    }
-
+    function handleChainChanged() { window.location.reload(); }
     hydrateWallet();
     window.ethereum.on("accountsChanged", handleAccountsChanged);
     window.ethereum.on("chainChanged", handleChainChanged);
-
     return () => {
       mounted = false;
       window.ethereum.removeListener?.("accountsChanged", handleAccountsChanged);
@@ -80,40 +67,86 @@ export default function JobsClient({ initialJobs, agents }) {
     return !walletAddress || !agent?.owner || agent.owner.toLowerCase() === walletAddress.toLowerCase();
   }
 
-  function walletMismatch(kind, expected) {
-    setOptimisticEvents((items) => [{
-      type: "Wrong Wallet Connected",
-      text: `${kind} wallet required. Connected: ${shortAddress(walletAddress)}. Expected: ${shortAddress(expected)}.`
-    }, ...items].slice(0, 5));
-  }
-
   function isJobCreator(job) {
     return !walletAddress || !job?.creator || job.creator.toLowerCase() === walletAddress.toLowerCase();
+  }
+
+  function addEvent(type, text) {
+    setOptimisticEvents(items => [{ type, text }, ...items].slice(0, 8));
+  }
+
+  function walletMismatch(kind, expected) {
+    addEvent("Wrong Wallet", `${kind} wallet required. Connected: ${shortAddress(walletAddress)}. Expected: ${shortAddress(expected)}.`);
   }
 
   async function refreshJobs() {
     try {
       setJobs(await api("/jobs"));
-    } catch (error) {
-      console.warn("Jobs refresh unavailable; using local demo snapshot.", error);
+    } catch {
       setJobs(await api("/jobs", { fallback: SEED_JOBS }));
+    }
+  }
+
+  // ONE-CLICK transaction sender - connects wallet, builds tx, sends to MetaMask in one flow
+  async function sendTransaction(action, params) {
+    if (!window.ethereum) {
+      addEvent("Wallet Required", "Install MetaMask to interact with Mantle Sepolia");
+      window.open("https://metamask.io/download/", "_blank", "noopener");
+      return;
+    }
+    setBusy(true);
+    try {
+      // 1. Connect + switch network
+      addEvent("Connecting Wallet", "Switching to Mantle Sepolia...");
+      const { from, chainId } = await requestWalletOnMantle();
+      setWalletAddress(from);
+      setWalletChainId(chainId);
+
+      // 2. Build transaction from backend
+      addEvent("Building Transaction", `Preparing ${action}...`);
+      const res = await api("/protocol/v1/transactions", {
+        method: "POST",
+        body: JSON.stringify({ action, params })
+      });
+      if (!res?.transaction) throw new Error("Backend did not return a transaction");
+      const tx = res.transaction;
+
+      // 3. Send to MetaMask - wallet popup appears here
+      addEvent("Sign in MetaMask", "MetaMask popup opening - please confirm the transaction");
+      const txHash = await window.ethereum.request({
+        method: "eth_sendTransaction",
+        params: [{ from, ...tx }]
+      });
+
+      // 4. Confirmed - poll indexer
+      setSentTxHash(txHash);
+      setWaitingForIndex(true);
+      addEvent("Transaction Submitted", txHash);
+      await pollForIndexedChange(txHash);
+    } catch (err) {
+      const msg = err?.message || "MetaMask rejected or network error";
+      if (msg.includes("User denied") || msg.includes("user rejected")) {
+        addEvent("Rejected", "You cancelled the transaction in MetaMask");
+      } else {
+        addEvent("Transaction Failed", msg);
+      }
+    } finally {
+      setBusy(false);
     }
   }
 
   async function createJob(event) {
     event.preventDefault();
-    setBusy(true);
-    try {
-      const tx = await api("/protocol/v1/transactions", {
-        method: "POST",
-        body: JSON.stringify({ action: "createJob", params: { description, reward } })
-      });
-      setPreparedTx(tx.transaction);
-      setOptimisticEvents((items) => [{ type: "Transaction Prepared", text: "Sign createJob with caller wallet" }, ...items].slice(0, 5));
-      setDescription("");
-    } finally {
-      setBusy(false);
+    if (!description.trim()) {
+      addEvent("Input Required", "Please enter a job description before submitting");
+      return;
     }
+    if (description.trim().length < 10) {
+      addEvent("Description Too Short", "Please enter a more detailed job description (at least 10 characters)");
+      return;
+    }
+    await sendTransaction("createJob", { description: description.trim(), reward: Number(reward) });
+    setDescription("");
   }
 
   async function acceptJob(jobId) {
@@ -121,159 +154,211 @@ export default function JobsClient({ initialJobs, agents }) {
       walletMismatch("Agent owner", selectedAgent?.owner);
       return;
     }
-    setBusy(true);
-    try {
-      const tx = await api("/protocol/v1/transactions", {
-        method: "POST",
-        body: JSON.stringify({ action: "acceptJob", params: { jobId, agentId: Number(agentId) } })
-      });
-      setPreparedTx(tx.transaction);
-      setOptimisticEvents((items) => [{ type: "Transaction Prepared", text: `Sign acceptJob for job ${jobId}` }, ...items].slice(0, 5));
-    } finally {
-      setBusy(false);
-    }
+    await sendTransaction("acceptJob", { jobId, agentId: Number(agentId) });
   }
 
   async function submitProof(jobId) {
-    const job = jobs.find((item) => item.id === jobId);
+    const job = jobs.find(item => item.id === jobId);
     if (!ownsAgent(job?.assignedAgentId)) {
       const assignedAgent = agentById.get(Number(job?.assignedAgentId));
       walletMismatch(`Agent owner for ${assignedAgent?.name || "the assigned agent"}`, assignedAgent?.owner);
       return;
     }
-    setBusy(true);
-    try {
-      const result = `completed:${jobId}:${Date.now()}`;
-      const resultHash = await sha256Hex(result);
-      const tx = await api("/protocol/v1/transactions", {
-        method: "POST",
-        body: JSON.stringify({ action: "submitProof", params: { jobId, agentId: job.assignedAgentId, resultHash } })
-      });
-      setPreparedTx(tx.transaction);
-      setOptimisticEvents((items) => [{ type: "Transaction Prepared", text: `Sign submitProof for job ${jobId}` }, ...items].slice(0, 5));
-    } finally {
-      setBusy(false);
-    }
+    const result = `completed:${jobId}:${Date.now()}`;
+    const resultHash = await sha256Hex(result);
+    await sendTransaction("submitProof", { jobId, agentId: job.assignedAgentId, resultHash });
   }
 
   async function acceptProof(jobId) {
-    setBusy(true);
-    try {
-      const job = jobs.find((item) => item.id === jobId);
-      if (!isJobCreator(job)) {
-        walletMismatch(`Creator for job ${jobId}`, job?.creator);
-        return;
-      }
-      if (!job?.hasSubmittedProof) {
-        setOptimisticEvents((items) => [{ type: "Proof Required", text: `Submit proof for job ${jobId} before creator acceptance` }, ...items].slice(0, 5));
-        return;
-      }
-      const tx = await api("/protocol/v1/transactions", {
-        method: "POST",
-        body: JSON.stringify({ action: "acceptProof", params: { jobId, agentId: job.assignedAgentId } })
-      });
-      setPreparedTx(tx.transaction);
-      setOptimisticEvents((items) => [{ type: "Transaction Prepared", text: `Sign acceptProof for job ${jobId}` }, ...items].slice(0, 5));
-    } finally {
-      setBusy(false);
+    const job = jobs.find(item => item.id === jobId);
+    if (!isJobCreator(job)) {
+      walletMismatch(`Creator for job ${jobId}`, job?.creator);
+      return;
     }
+    if (!job?.hasSubmittedProof) {
+      addEvent("Proof Required", `Agent must submit proof for job ${jobId} before you can accept it`);
+      return;
+    }
+    await sendTransaction("acceptProof", { jobId, agentId: job.assignedAgentId });
   }
 
   async function markFailed(jobId) {
-    setBusy(true);
-    try {
-      const job = jobs.find((item) => item.id === jobId);
-      if (!isJobCreator(job)) {
-        walletMismatch(`Creator for job ${jobId}`, job?.creator);
-        return;
-      }
-      const reasonHash = await sha256Hex(`failed:${jobId}:${Date.now()}`);
-      const tx = await api("/protocol/v1/transactions", {
-        method: "POST",
-        body: JSON.stringify({ action: "markJobFailed", params: { jobId, agentId: job.assignedAgentId, reasonHash } })
-      });
-      setPreparedTx(tx.transaction);
-      setOptimisticEvents((items) => [{ type: "Transaction Prepared", text: `Sign markJobFailed for job ${jobId}` }, ...items].slice(0, 5));
-    } finally {
-      setBusy(false);
+    const job = jobs.find(item => item.id === jobId);
+    if (!isJobCreator(job)) {
+      walletMismatch(`Creator for job ${jobId}`, job?.creator);
+      return;
     }
+    const reasonHash = await sha256Hex(`failed:${jobId}:${Date.now()}`);
+    await sendTransaction("markJobFailed", { jobId, agentId: job.assignedAgentId, reasonHash });
+  }
+
+  async function connectWallet() {
+    if (!window.ethereum) {
+      addEvent("Wallet Missing", "Install MetaMask to connect");
+      window.open("https://metamask.io/download/", "_blank", "noopener");
+      return;
+    }
+    try {
+      const { from, chainId } = await requestWalletOnMantle();
+      setWalletAddress(from);
+      setWalletChainId(chainId);
+      addEvent("Wallet Connected", `${shortAddress(from)} on Mantle Sepolia`);
+    } catch (err) {
+      addEvent("Connection Failed", err?.message || "MetaMask rejected");
+    }
+  }
+
+  async function addMantleSepoliaToWallet() {
+    if (!window.ethereum) return;
+    try {
+      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [MANTLE_SEPOLIA_CHAIN] });
+      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      setWalletChainId(chainId);
+      addEvent("Network Added", "Mantle Sepolia added to MetaMask");
+    } catch (err) {
+      addEvent("Network Add Failed", err?.message || "MetaMask rejected");
+    }
+  }
+
+  async function pollForIndexedChange(txHash) {
+    for (let attempt = 0; attempt < 12; attempt++) {
+      await new Promise(r => setTimeout(r, 2500));
+      try {
+        const nextJobs = await api("/jobs");
+        setJobs(nextJobs);
+        if (JSON.stringify(nextJobs).includes(txHash)) {
+          setWaitingForIndex(false);
+          addEvent("Indexed on Chain", "Transaction confirmed and indexed - leaderboard updated");
+          return;
+        }
+      } catch { /* keep polling */ }
+    }
+    setWaitingForIndex(false);
+    addEvent("Indexing Pending", "Transaction submitted. Indexer will confirm shortly - refresh the page in 30s");
   }
 
   return (
     <div className="two-col">
       <section>
+        {/* Create Job Form */}
         <form className="card" onSubmit={createJob}>
           <h2>Request Accepted Submission</h2>
-          <input className="input" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Submission to record" required />
-          <div className="toolbar">
-            <input className="input" type="number" value={reward} onChange={(e) => setReward(e.target.value)} min="0" />
-            <p className="fee-note">Creating a job costs 0.005 MNT (Mantle Sepolia testnet)</p>
-            <button className="button" disabled={busy} type="submit"><Plus size={18} />Create Proof Task</button>
+          <p className="muted" style={{ marginBottom: "14px", fontSize: "0.875rem" }}>
+            Describe a task for an AI agent. The agent executes it, submits cryptographic proof, and you verify on-chain.
+          </p>
+          <textarea
+            className="input"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="e.g. Analyze the top DeFi protocols on Mantle Sepolia and produce a risk assessment report with findings..."
+            required
+            rows={3}
+            style={{ resize: "vertical", minHeight: "80px", width: "100%", fontFamily: "inherit", boxSizing: "border-box" }}
+          />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "12px", flexWrap: "wrap", gap: "10px" }}>
+            <p className="muted" style={{ fontSize: "0.8rem", margin: 0 }}>
+              Creating a job costs <strong>0.005 MNT</strong> (Mantle Sepolia testnet)
+            </p>
+            <button className="button" disabled={busy || !description.trim()} type="submit" style={{ minWidth: "160px" }}>
+              {busy ? "Processing..." : <><Plus size={18} /> Create Proof Task</>}
+            </button>
           </div>
         </form>
 
+        {/* Verification Queue */}
         <section className="card" style={{ marginTop: 18 }}>
           <h2>Verification Queue</h2>
           <div className="toolbar">
             <select className="select" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-              {agents.map((agent) => <option value={agent.id} key={agent.id}>{agent.name}</option>)}
+              {agents.map(agent => <option value={agent.id} key={agent.id}>{agent.name}</option>)}
             </select>
             {walletAddress ? (
               <div className="pill">
                 <span className="status COMPLETED">{shortAddress(walletAddress)}</span>
+                {isMantleSepolia && <span className="muted" style={{ marginLeft: 6 }}>Mantle Sepolia connected</span>}
               </div>
             ) : (
-              <button className="button secondary" type="button" disabled={busy} onClick={connectWallet}>Connect Wallet</button>
+              <button className="button secondary" type="button" disabled={busy} onClick={connectWallet}>
+                Connect Wallet
+              </button>
             )}
             {walletAddress && !isMantleSepolia && (
-              <button className="button secondary" type="button" disabled={busy} onClick={addMantleSepoliaToWallet}>+ Add Mantle Sepolia</button>
+              <button className="button secondary" type="button" disabled={busy} onClick={addMantleSepoliaToWallet}>
+                + Add Mantle Sepolia
+              </button>
             )}
-            {walletAddress && isMantleSepolia && <span className="muted">Mantle Sepolia ✓</span>}
           </div>
-          <p className="wallet-helper">Requires MetaMask on Mantle Sepolia (Chain ID 5003)</p>
-          {walletAddress && walletChainId && walletChainId.toLowerCase() !== MANTLE_SEPOLIA_CHAIN.chainId.toLowerCase() && (
-            <p className="muted">Wrong network. Agent Atlas runs on Mantle Sepolia. Use Connect Wallet again to switch.</p>
+
+          {!walletAddress && (
+            <div style={{ padding: "16px", background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)", borderRadius: "10px", margin: "12px 0", textAlign: "center" }}>
+              <p style={{ color: "var(--text-secondary)", marginBottom: "10px", fontSize: "0.875rem" }}>
+                Connect MetaMask to assign agents, submit proofs, and verify work on Mantle Sepolia.
+              </p>
+              <button className="button" onClick={connectWallet}>Connect MetaMask</button>
+            </div>
           )}
+
           {walletAddress && selectedAgent?.owner && !ownsSelectedAgent && (
-            <p className="muted">Owner wallet required for this agent. Connected: <AddressLink address={walletAddress} />. Owner: <AddressLink address={selectedAgent.owner} />.</p>
+            <p className="muted" style={{ fontSize: "0.8rem", padding: "8px 0" }}>
+              Owner wallet required for <strong>{selectedAgent.name}</strong>. Connected: <ChainLink value={walletAddress} type="address" />. Owner: <ChainLink value={selectedAgent.owner} type="address" />.
+            </p>
           )}
-          {waitingForIndex && <p className="muted">Waiting for indexed confirmation...</p>}
+
+          {waitingForIndex && (
+            <div style={{ padding: "10px 14px", background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.3)", borderRadius: "8px", margin: "8px 0", fontSize: "0.875rem", color: "var(--purple-light)" }}>
+              Waiting for indexer confirmation (~30 seconds)...
+            </div>
+          )}
+
           <table className="table">
             <tbody>
               {jobs.length === 0 ? (
                 <tr>
                   <td colSpan="3">
                     <div style={{ padding: 24, textAlign: "center" }}>
-                      <p style={{ color: "#0f8f68", marginBottom: 8 }}>Loading indexed jobs</p>
-                      <p className="muted">The indexer is syncing or unavailable. Demo snapshot data is labeled when shown.</p>
+                      <p style={{ color: "#0f8f68", marginBottom: 8 }}>No jobs yet</p>
+                      <p className="muted">Create the first job above to get started.</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                jobs.map((job) => (
+                jobs.map(job => (
                   <tr key={job.id}>
                     <td>
-                      <strong>{job.description}</strong>
-                      <div className="muted">{job.reward} MNT</div>
+                      <strong>#{job.id} {job.description}</strong>
+                      <div className="muted" style={{ fontSize: "0.8rem", marginTop: 2 }}>
+                        {job.reward > 0 ? `${job.reward} MNT reward` : "Testnet job"}
+                        {job.proof?.transactionUrl && (
+                          <> · <a href={job.proof.transactionUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--purple-light)" }}>View proof →</a></>
+                        )}
+                      </div>
                     </td>
                     <td><StatusBadge status={job.status} /></td>
                     <td>
                       {job.status === "OPEN" && (
-                        <button className="button secondary" disabled={ownerActionDisabled} title={ownsSelectedAgent ? "Accept with selected agent owner wallet" : "Connect the selected agent owner wallet"} onClick={() => acceptJob(job.id)}><Play size={16} />Assign Agent</button>
+                        <button className="button secondary" disabled={ownerActionDisabled} onClick={() => acceptJob(job.id)}>
+                          <Play size={16} /> Assign Agent
+                        </button>
                       )}
                       {job.status === "ASSIGNED" && (
-                        <div className="toolbar">
-                          <button className="button success" disabled={busy || !ownsAgent(job.assignedAgentId)} title={ownsAgent(job.assignedAgentId) ? "Submit with assigned agent owner wallet" : "Connect the assigned agent owner wallet"} onClick={() => submitProof(job.id)}><Upload size={16} />Submit Proof</button>
+                        <div className="toolbar" style={{ gap: 6 }}>
+                          <button className="button success" disabled={busy || !ownsAgent(job.assignedAgentId)} onClick={() => submitProof(job.id)}>
+                            <Upload size={16} /> Submit Proof
+                          </button>
                           {job.hasSubmittedProof ? (
-                            <button className="button success" disabled={busy || !isJobCreator(job)} title={isJobCreator(job) ? "Accept with job creator wallet" : "Connect the job creator wallet"} onClick={() => acceptProof(job.id)}><CheckCircle size={16} />Accept Submission</button>
+                            <button className="button success" disabled={busy || !isJobCreator(job)} onClick={() => acceptProof(job.id)}>
+                              <CheckCircle size={16} /> Accept
+                            </button>
                           ) : (
-                            <span className="muted">Awaiting proof submission</span>
+                            <span className="muted" style={{ fontSize: "0.8rem" }}>Awaiting proof</span>
                           )}
-                          <button className="button secondary" disabled={busy || !job.hasSubmittedProof || !isJobCreator(job)} title={!job.hasSubmittedProof ? "Proof submission required before failure" : isJobCreator(job) ? "Mark failed with job creator wallet" : "Connect the job creator wallet"} onClick={() => markFailed(job.id)}><XCircle size={16} />Mark Failed</button>
+                          <button className="button secondary" disabled={busy || !job.hasSubmittedProof || !isJobCreator(job)} onClick={() => markFailed(job.id)}>
+                            <XCircle size={16} />
+                          </button>
                         </div>
                       )}
-                      {job.status === "COMPLETED" && <CheckCircle color="#0f8f68" />}
-                      {job.status === "FAILED" && <XCircle color="#b42318" />}
+                      {job.status === "COMPLETED" && <CheckCircle color="#0f8f68" size={20} />}
+                      {job.status === "FAILED" && <XCircle color="#b42318" size={20} />}
                     </td>
                   </tr>
                 ))
@@ -282,125 +367,62 @@ export default function JobsClient({ initialJobs, agents }) {
           </table>
         </section>
       </section>
+
+      {/* Right column */}
       <section>
+        {/* Submission Progress */}
         {optimisticEvents.length > 0 && (
-          <div className="card optimistic">
+          <div className="card" style={{ marginBottom: 18 }}>
             <h2>Submission Progress</h2>
-            {optimisticEvents.map((event, index) => (
-              <div className="event" key={`${event.type}-${index}`}>
-                <strong>{event.type}</strong>
-                <div className="muted">{event.text}</div>
-              </div>
-            ))}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {optimisticEvents.map((event, index) => (
+                <div key={`${event.type}-${index}`} style={{
+                  display: "flex", alignItems: "flex-start", gap: "10px",
+                  padding: "10px 14px",
+                  background: "var(--bg-primary)",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color)",
+                  opacity: index === 0 ? 1 : 0.55
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--text-primary)" }}>
+                      {event.type}
+                    </div>
+                    <div style={{
+                      fontSize: "0.75rem",
+                      color: "var(--text-secondary)",
+                      fontFamily: event.text?.startsWith("0x") ? "monospace" : "inherit",
+                      wordBreak: "break-all",
+                      marginTop: "2px"
+                    }}>
+                      {event.text?.startsWith("0x") ? (
+                        <a href={`https://sepolia.mantlescan.xyz/tx/${event.text}`} target="_blank" rel="noopener noreferrer"
+                          style={{ color: "var(--purple-light)", textDecoration: "none" }}>
+                          {event.text.slice(0, 18)}...{event.text.slice(-6)} →
+                        </a>
+                      ) : event.text}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
-        <div style={{ marginTop: optimisticEvents.length > 0 ? 18 : 0 }}>
-          <LivePanel />
-          {preparedTx && (
-            <div className="card" style={{ marginTop: 18 }}>
-              <h2>Prepared Transaction</h2>
-              <button className="button" disabled={busy} onClick={sendPreparedTransaction}>Sign And Send</button>
-              {sentTxHash && <p className="muted">Submitted: <ChainLink value={sentTxHash} type="tx" /></p>}
-              <pre>{JSON.stringify(preparedTx, null, 2)}</pre>
-            </div>
-          )}
-        </div>
+
+        <LivePanel />
       </section>
     </div>
   );
-
-  async function sendPreparedTransaction() {
-    if (!preparedTx) return;
-    if (!window.ethereum) {
-      setOptimisticEvents((items) => [{ type: "Wallet Missing", text: "Install or unlock an EIP-1193 wallet to submit this transaction" }, ...items].slice(0, 5));
-      window.open("https://metamask.io/download/", "_blank", "noopener");
-      return;
-    }
-    setBusy(true);
-    try {
-      const { from, chainId } = await requestWalletOnMantle();
-      setWalletAddress(from);
-      setWalletChainId(chainId);
-      const txHash = await window.ethereum.request({
-        method: "eth_sendTransaction",
-        params: [{ from, ...preparedTx }]
-      });
-      setSentTxHash(txHash);
-      setWaitingForIndex(true);
-      setOptimisticEvents((items) => [{ type: "Waiting for Indexed Confirmation", text: txHash }, ...items].slice(0, 5));
-      setPreparedTx(null);
-      await pollForIndexedChange(txHash);
-    } catch (err) {
-      setOptimisticEvents((items) => [{ type: "Wallet Connection Failed", text: err?.message || "MetaMask rejected or failed to switch network" }, ...items].slice(0, 5));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function connectWallet() {
-    if (!window.ethereum) {
-      setOptimisticEvents((items) => [{ type: "Wallet Missing", text: "Install or unlock an EIP-1193 wallet to submit this transaction" }, ...items].slice(0, 5));
-      window.open("https://metamask.io/download/", "_blank", "noopener");
-      return;
-    }
-    try {
-      const { from, chainId } = await requestWalletOnMantle();
-      setWalletAddress(from);
-      setWalletChainId(chainId);
-      setOptimisticEvents((items) => [{ type: "Wallet Connected", text: `${shortAddress(from)} on Mantle Sepolia` }, ...items].slice(0, 5));
-    } catch (err) {
-      setOptimisticEvents((items) => [{ type: "Wallet Connection Failed", text: err?.message || "MetaMask rejected or failed to switch network" }, ...items].slice(0, 5));
-    }
-  }
-
-  async function addMantleSepoliaToWallet() {
-    if (!window.ethereum) {
-      setOptimisticEvents((items) => [{ type: "Wallet Missing", text: "Install or unlock MetaMask to add Mantle Sepolia" }, ...items].slice(0, 5));
-      window.open("https://metamask.io/download/", "_blank", "noopener");
-      return;
-    }
-    try {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [MANTLE_SEPOLIA_CHAIN]
-      });
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      setWalletChainId(chainId);
-      setOptimisticEvents((items) => [{ type: "Network Added", text: "Mantle Sepolia is available in MetaMask" }, ...items].slice(0, 5));
-    } catch (err) {
-      setOptimisticEvents((items) => [{ type: "Network Add Failed", text: err?.message || "MetaMask rejected the network request" }, ...items].slice(0, 5));
-    }
-  }
-
-  async function pollForIndexedChange(txHash) {
-    for (let attempt = 0; attempt < 12; attempt += 1) {
-      await new Promise((resolve) => setTimeout(resolve, 2500));
-      const nextJobs = await api("/jobs", { fallback: SEED_JOBS });
-      setJobs(nextJobs);
-      if (JSON.stringify(nextJobs).includes(txHash)) {
-        setWaitingForIndex(false);
-        setOptimisticEvents((items) => [{ type: "Indexed Confirmation", text: txHash }, ...items].slice(0, 5));
-        return;
-      }
-    }
-    // Keep the waiting state active until the indexer confirms the transaction.
-    setOptimisticEvents((items) => [{ type: "Indexing Pending", text: "Transaction submitted; waiting for indexer confirmation depth" }, ...items].slice(0, 5));
-  }
 }
 
 async function sha256Hex(value) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return `0x${Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
+  return `0x${Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("")}`;
 }
 
 function shortAddress(value = "") {
   return value ? `${value.slice(0, 6)}...${value.slice(-4)}` : "";
-}
-
-function AddressLink({ address }) {
-  if (!address) return null;
-  return <ChainLink value={address} type="address" />;
 }
 
 async function requestWalletOnMantle() {
@@ -412,10 +434,7 @@ async function requestWalletOnMantle() {
     });
   } catch (switchError) {
     if (switchError?.code === 4902) {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [MANTLE_SEPOLIA_CHAIN]
-      });
+      await window.ethereum.request({ method: "wallet_addEthereumChain", params: [MANTLE_SEPOLIA_CHAIN] });
     } else {
       throw switchError;
     }
