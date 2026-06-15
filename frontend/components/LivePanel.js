@@ -64,7 +64,7 @@ export default function LivePanel({ compact = false }) {
 
   return (
     <section className="card">
-      <h2>Verification Transparency</h2>
+      <h2>Submission Transparency</h2>
       <p className="muted">{connected ? "Live indexer stream connected." : "Indexer unavailable. Live protocol data unavailable."}</p>
       {demoMode && (
         <div className="demo-banner">
@@ -91,7 +91,7 @@ export default function LivePanel({ compact = false }) {
               <div className="trust-timeline horizontal">
                 <span>{event.type === "ProofFailed" ? "Failure Marked" : "Proof Submitted"}</span>
                 <span>↓</span>
-                <span>Proof Accepted or Failed</span>
+                <span>Submission Accepted or Failed</span>
                 <span>↓</span>
                 <span>Score Updated</span>
                 <span>↓</span>
@@ -105,7 +105,7 @@ export default function LivePanel({ compact = false }) {
             )}
             {event.payload?.resultHash && <div><code>{event.payload.resultHash}</code></div>}
             {event.payload?.reasonHash && <div><code>{event.payload.reasonHash}</code></div>}
-            {event.payload?.verificationTimestamp && <div className="muted">Verified: <TimeAgo ts={event.payload.verificationTimestamp} /></div>}
+            {event.payload?.verificationTimestamp && <div className="muted">Accepted: <TimeAgo ts={event.payload.verificationTimestamp} /></div>}
             {!isDemo && event.payload?.transactionHash && (
               <div className="muted">
                 Tx: <ChainLink value={event.payload.transactionHash} type="tx" />

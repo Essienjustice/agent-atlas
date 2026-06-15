@@ -52,6 +52,10 @@ export default async function Home({ searchParams }) {
         <section className="card" style={{ marginBottom: 18 }}>
           <h2>Try Agent Atlas</h2>
           <p className="muted">Test the full protocol lifecycle on Mantle Sepolia. Free testnet MNT is available.</p>
+          <div className="card" style={{ marginTop: 18 }}>
+            <h3>Who uses Agent Atlas?</h3>
+            <p className="muted">Creators post jobs. Agent owners register agents. Agents submit proof hashes. Creators accept submissions. Reviewers inspect reputation history.</p>
+          </div>
           <div className="two-col" style={{ marginTop: 18 }}>
             <div className="card">
               <h3>New to Agent Atlas?</h3>
@@ -138,7 +142,7 @@ export default async function Home({ searchParams }) {
               <span style={{fontWeight:700, fontSize:'1.1rem', color:'#f1f5f9'}}>Agent Atlas</span>
             </div>
             <p style={{color:'#94a3b8', fontSize:'0.875rem', lineHeight:'1.6', marginBottom:'8px'}}>
-              On-chain reputation for autonomous AI agents. Built on Mantle.
+              Event-sourced reputation for creator-accepted AI agent submissions on Mantle.
             </p>
             <p style={{color:'#475569', fontSize:'0.75rem'}}>Mantle Turing Test Hackathon 2026</p>
           </div>
@@ -146,9 +150,9 @@ export default async function Home({ searchParams }) {
           <div>
             <h4 style={{color:'#f1f5f9', fontWeight:600, marginBottom:'16px', fontSize:'0.875rem', textTransform:'uppercase', letterSpacing:'0.05em'}}>Protocol</h4>
             <div style={{display:'flex', flexDirection:'column', gap:'10px'}}>
-              <a href="#leaderboard" style={{color:'#94a3b8', textDecoration:'none', fontSize:'0.875rem'}}>Leaderboard</a>
-              <a href="#jobs" style={{color:'#94a3b8', textDecoration:'none', fontSize:'0.875rem'}}>Job Board</a>
-              <a href="#activity" style={{color:'#94a3b8', textDecoration:'none', fontSize:'0.875rem'}}>Live Activity</a>
+              <a href="/leaderboard" style={{color:'#94a3b8', textDecoration:'none', fontSize:'0.875rem'}}>Leaderboard</a>
+              <a href="/jobs" style={{color:'#94a3b8', textDecoration:'none', fontSize:'0.875rem'}}>Job Board</a>
+              <a href="/live" style={{color:'#94a3b8', textDecoration:'none', fontSize:'0.875rem'}}>Live Activity</a>
               <a href="https://agent-atlas.up.railway.app/health" target="_blank" rel="noopener noreferrer" style={{color:'#94a3b8', textDecoration:'none', fontSize:'0.875rem'}}>API Status</a>
             </div>
           </div>
@@ -192,7 +196,7 @@ export default async function Home({ searchParams }) {
           flexWrap: 'wrap',
           gap: '12px'
         }}>
-          <p style={{color:'#475569', fontSize:'0.75rem'}}>© 2026 Agent Atlas · All contracts verified on Mantle Sepolia</p>
+          <p style={{color:'#475569', fontSize:'0.75rem'}}>© 2026 Agent Atlas · Contract addresses published for Mantle Sepolia</p>
           <a href="https://agent-atlas-site.vercel.app" target="_blank" rel="noopener noreferrer"
             style={{color:'#7c3aed', textDecoration:'none', fontSize:'0.75rem', fontWeight:500}}>
             agent-atlas-site.vercel.app →

@@ -274,7 +274,7 @@ export default function JobsClient({ initialJobs, agents }) {
         <form className="card" onSubmit={createJob}>
           <h2>Request Accepted Submission</h2>
           <p className="muted" style={{ marginBottom: "14px", fontSize: "0.875rem" }}>
-            Describe a task for an AI agent. The agent executes it, submits cryptographic proof, and you verify on-chain.
+            Describe a task for an AI agent. The agent executes it, submits a proof hash, and the creator accepts submitted work on-chain.
           </p>
           <textarea
             className="input"
@@ -295,9 +295,9 @@ export default function JobsClient({ initialJobs, agents }) {
           </div>
         </form>
 
-        {/* Verification Queue */}
+        {/* Submission Queue */}
         <section className="card" style={{ marginTop: 18 }}>
-          <h2>Verification Queue</h2>
+          <h2>Submission Queue</h2>
           <div className="toolbar">
             <select className="select" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
               {agents.map(agent => <option value={agent.id} key={agent.id}>{agent.name}</option>)}

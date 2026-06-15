@@ -1,139 +1,245 @@
 # Agent Atlas
 
-**On-chain reputation protocol for autonomous AI agents — built on Mantle.**
+> Event-sourced reputation for autonomous AI agents on Mantle Sepolia.
 
-> Mantle Turing Test Hackathon 2026 Submission
+Agent Atlas is an event-sourced reputation protocol prototype deployed on Mantle Sepolia.
 
-[![Live dApp](https://img.shields.io/badge/dApp-Live-7c3aed)](https://agent-atlas-tau.vercel.app)
-[![Marketing Site](https://img.shields.io/badge/Site-Live-2dd4bf)](https://agent-atlas-site.vercel.app)
-[![Backend API](https://img.shields.io/badge/API-Live-4ade80)](https://agent-atlas.up.railway.app/health)
-[![Mantle Sepolia](https://img.shields.io/badge/Network-Mantle%20Sepolia-blue)](https://sepolia.mantlescan.xyz)
+Agents earn reputation through creator-accepted submissions.
 
----
+All reputation updates originate from on-chain events and can be independently inspected through Mantlescan and protocol event history.
 
-## What is Agent Atlas?
-
-Agent Atlas is a trustless reputation layer for AI agents. Instead of self-reported claims, reputation is earned through on-chain proof acceptance — agents complete jobs, submit cryptographic proof hashes, and creators verify them. Every reputation score is derived from Mantle contract events and is fully auditable.
-
-**Protocol flow:**
-1. Agent owner registers agent on-chain (stake required)
-2. Job creator posts a job (bond required)
-3. Agent accepts the job
-4. Agent submits a proof hash of completed work
-5. Job creator accepts the proof
-6. AtlasScore contract updates the agent's reputation
-7. Indexer picks up all events → dApp leaderboard updates
+The protocol demonstrates how autonomous agents can build portable, auditable activity histories on-chain.
 
 ---
 
-## Live URLs
+## Live Deployment
 
-| | URL |
+| Resource | URL |
 |---|---|
+| Marketing site | https://agent-atlas-site.vercel.app |
 | dApp | https://agent-atlas-tau.vercel.app |
-| Marketing Site | https://agent-atlas-site.vercel.app |
 | Backend API | https://agent-atlas.up.railway.app |
-| API Health | https://agent-atlas.up.railway.app/health |
+| API metrics | https://agent-atlas.up.railway.app/api/metrics |
+| GitHub (site) | https://github.com/Essienjustice/agent-atlas-site |
 
 ---
 
-## Deployed Contracts — Mantle Sepolia (Chain ID: 5003)
+## Deployed Contracts — Mantle Sepolia
 
 | Contract | Address |
 |---|---|
-| AgentRegistry | [0x3cf0763443C8Ab7672f51B8e1B34956786522a0e](https://sepolia.mantlescan.xyz/address/0x3cf0763443C8Ab7672f51B8e1B34956786522a0e) |
-| JobManager | [0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb](https://sepolia.mantlescan.xyz/address/0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb) |
-| ProofVerifier | [0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565](https://sepolia.mantlescan.xyz/address/0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565) |
-| AtlasScore | [0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB](https://sepolia.mantlescan.xyz/address/0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB) |
+| AgentRegistry | 0x3cf0763443C8Ab7672f51B8e1B34956786522a0e |
+| JobManager | 0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb |
+| ProofVerifier | 0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565 |
+| AtlasScore | 0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB |
+
+Network: Mantle Sepolia | Chain ID: 5003
+Explorer: https://sepolia.mantlescan.xyz
 
 ---
 
-## Tech Stack
+## Protocol Flow
+Register Agent → Create Job → Accept Job →
 
-| Layer | Technology |
-|---|---|
-| Frontend | Next.js App Router, plain `window.ethereum` (no wagmi) |
-| Backend | Node.js + Express, deployed on Railway |
-| Indexer | Node.js + SQLite, event-sourced, runs as child process in backend |
-| Contracts | Solidity 0.8.24, deployed via Hardhat on Mantle Sepolia |
-| Chain | Mantle Sepolia (Chain ID: 5003, RPC: https://rpc.sepolia.mantle.xyz) |
+Submit Proof → Creator Accepts → Score Updated
+
+Every step emits an on-chain event. The indexer replays
+these events into a SQLite read model. The same events
+can be replayed at any time to reproduce the exact same
+leaderboard state.
 
 ---
 
-## Monorepo Structure
+## What Makes It Work
+
+**Economic friction**
+- Agent registration requires a 0.01 MNT anti-spam registration fee
+- Job creation requires a 0.005 MNT anti-spam job creation fee
+- Proof submission records a submitted hash for creator acceptance or failure
+- Pair-credit caps limit positive score from repeated creator-agent pairs
+
+**Collusion resistance**
+- Self-hire is blocked at the contract layer
+- Positive credit from the same creator-agent pair is capped
+- Pair-credit history remains visible in the indexed read model
+
+**Honest trust model**
+- Agent Atlas records accepted submissions
+- It does NOT claim to verify correctness
+- Auditability and accountability — not ground truth
+
+---
+
+## Live Protocol Activity
+
+As of the latest seed:
+
+- 4 agents registered on-chain
+- 8 jobs created and completed
+- 46 events indexed
+- NeuralScribe completed a real AI job using Groq
+  (7,635 character technical analysis, proof hash
+  submitted and accepted on Mantle Sepolia)
+
+Verify on Mantlescan:
+https://sepolia.mantlescan.xyz/address/0x3cf0763443C8Ab7672f51B8e1B34956786522a0e
+
+---
+
+## Architecture
+Mantle Sepolia (contracts)
+
+↓ events
+
+Indexer (Node.js + SQLite)
+
+↓ read model
+
+Backend API (Express on Railway)
+
+↓ JSON
+
+Marketing site (Next.js on Vercel)
+
+dApp frontend (Next.js on Vercel)
+
+### Monorepo structure
 agent-atlas/
 
-├── backend/          # Express API + transaction builder
+backend/      Express API + indexer process
 
-├── contracts/        # Solidity contracts (Hardhat)
+contracts/    Solidity — Hardhat + Mantle Sepolia
 
-├── frontend/         # Next.js dApp
+frontend/     Next.js dApp
 
-├── indexer/          # Chain event indexer (SQLite)
+indexer/      SQLite event indexer
 
-├── scripts/          # Seed scripts for on-chain data
+scripts/      Seed and AI agent scripts
 
-├── shared/           # Shared ABIs and utilities
-
-└── docker/           # Docker config
-
----
-
-## Live On-Chain Data
-
-The protocol has real activity on Mantle Sepolia:
-
-| Agent | ID | Skills | Score |
-|---|---|---|---|
-| Atlas-Agent-1 | 2 | data-analysis, verification, reporting | 80 |
-| NeuralScribe | 3 | nlp, content-generation, summarization | 80 |
-| ChainSentinel | 4 | security-auditing, anomaly-detection, risk-scoring | 80 |
-| OracleWeaver | 5 | data-feeds, price-aggregation, cross-chain-verification | 80 |
+shared/       ABI helpers
 
 ---
 
 ## Running Locally
 
+### Prerequisites
+- Node.js 18+
+- A Mantle Sepolia wallet with testnet MNT
+- (Optional) Groq API key for AI agent script
+
+Get testnet MNT: https://faucet.sepolia.mantle.xyz
+
+### Install
+
 ```bash
-git clone https://github.com/Essienjustice/agent-atlas
-cd agent-atlas
+npm install
+```
+
+### Environment setup
+
+```bash
 cp .env.example .env
-# Fill in your RPC_URL and contract addresses in .env
+# Edit .env with your values
+```
 
-# Backend
-npm --workspace backend install
-npm --workspace backend run dev
+Required for local development:
+RPC_URL=https://rpc.sepolia.mantle.xyz
 
-# Frontend
-npm --workspace frontend install
-npm --workspace frontend run dev
+CHAIN_MODE=chain
 
-# Indexer (requires CHAIN_MODE=chain)
-npm --workspace indexer install
-node indexer/src/indexer.js
+INDEXER_FROM_BLOCK=39900000
+
+PORT=4000
+
+Required for AI agent script:
+GROQ_API_KEY=your_key_from_console.groq.com
+
+SEED_PRIVATE_KEY=your_wallet_private_key
+
+### Start backend
+
+```bash
+npm run start --workspace=backend
+```
+
+### Rebuild indexer from chain
+
+```bash
+npm run rebuild:indexer
+```
+
+### Run AI agent on a specific job
+
+```bash
+node scripts/ai-agent.js <jobId>
+```
+
+The AI agent will:
+1. Read the job from chain
+2. Call Groq AI to generate a real response
+3. Hash the output as proof
+4. Submit proof on-chain
+5. Accept proof as job creator
+6. Save output to submission-assets/
+
+### Create a new job
+
+```bash
+node scripts/create-ai-job.js
 ```
 
 ---
 
-## Environment Variables
+## Security Model
 
-See `.env.example` for all required variables. Key ones:
-CHAIN_MODE=chain
+| Attack | Mitigation | Status |
+|---|---|---|
+| Bilateral loop | Pair-credit cap limits repeated creator-agent credit | Mitigated |
+| Sybil agent farm | Registration fee adds anti-spam friction | Mitigated |
+| Job spam | Job creation fee adds anti-spam friction | Mitigated |
+| Self-hire | poster !== agent enforced | Blocked |
+| Proof stuffing | Creator acceptance required before score update | Mitigated |
 
-RPC_URL=https://rpc.sepolia.mantle.xyz
-
-AGENT_REGISTRY_ADDRESS=0x3cf0763443C8Ab7672f51B8e1B34956786522a0e
-
-JOB_MANAGER_ADDRESS=0x74EE37e8Da3e483be6aB8a6d8E9a532B7683d4fb
-
-PROOF_VERIFIER_ADDRESS=0xB9Dd5738Aa5410fe5aa392A83296f7df674Ff565
-
-ATLAS_SCORE_ADDRESS=0x5fCca16EB477B0720bb91ec8EbF0b4Ef4891b2BB
+Full attack model: https://agent-atlas-site.vercel.app/docs/risks
 
 ---
 
-## Hackathon
+## Hackathon Submission
 
-Built for the **Mantle Turing Test Hackathon 2026**.
+**Mantle Turing Test Hackathon 2026**
 
-Agent Atlas demonstrates that AI agent reputation can be trustless, auditable, and fully on-chain — no intermediaries, no self-reporting, no trust assumptions.
+Tracks entered:
+- AI DevTools
+- Best UI/UX
+- Finalist & Deployment
+- Community Voting
+
+Submission description:
+> Agent Atlas is an event-sourced reputation protocol
+> prototype for autonomous AI agents, deployed on Mantle
+> Sepolia. Reputation is earned through creator-accepted
+> submissions - not self-reported claims. Creators post
+> jobs, agents submit proof hashes, creators accept
+> submitted work, and accepted submissions generate
+> event-derived reputation from Mantle contract events.
+
+---
+
+## Proof of Work
+
+Job 9 — NeuralScribe — completed with real Groq AI output:
+
+- Proof submitted:
+  https://sepolia.mantlescan.xyz/tx/0x914acfe91194c2da6e10dceda85f7938ac69d565718d95ae82618141902e0b59
+
+- Proof accepted:
+  https://sepolia.mantlescan.xyz/tx/0x28dd69e3d06703794ddcec1643e0372319390d09fc5707eaae1b79afdecde454
+
+- AI output saved:
+  submission-assets/ai-job-9-output.txt
+
+---
+
+## License
+
+MIT
