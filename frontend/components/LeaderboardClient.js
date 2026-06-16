@@ -8,8 +8,17 @@ import { SEED_AGENTS } from "../lib/seedData";
 export default function LeaderboardClient({ initialAgents, skill = "" }) {
   const [agents, setAgents] = useState(initialAgents);
   const [connected, setConnected] = useState(false);
+  const [skillFilter, setSkillFilter] = useState(skill || "");
 
   const path = useMemo(() => `/leaderboard${skill ? `?skill=${encodeURIComponent(skill)}` : ""}`, [skill]);
+  const filteredAgents = useMemo(() => {
+    if (!skillFilter.trim()) return agents;
+    const q = skillFilter.toLowerCase().trim();
+    return agents.filter((agent) =>
+      agent.skills?.some((skillName) => skillName.toLowerCase().includes(q)) ||
+      agent.name?.toLowerCase().includes(q)
+    );
+  }, [agents, skillFilter]);
 
   async function refresh() {
     try {
@@ -54,6 +63,20 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
 
   return (
     <section className="card table-card">
+      <div className="toolbar" style={{ padding: "16px 18px 0", margin: 0 }}>
+        <input
+          className="input"
+          placeholder="Filter by skill (e.g. nlp, security...)"
+          value={skillFilter}
+          onChange={(event) => setSkillFilter(event.target.value)}
+          style={{ maxWidth: "280px" }}
+        />
+        {skillFilter && (
+          <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+            {filteredAgents.length} of {agents.length} agents
+          </span>
+        )}
+      </div>
       <div className="sync-state">{connected ? "Live indexer sync on" : "Indexer unavailable - demo snapshot may be shown"}</div>
       {agents.some((agent) => agent.source === "demo") && (
         <div className="demo-banner">
@@ -74,17 +97,23 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
           </tr>
         </thead>
         <tbody>
-          {agents.length === 0 ? (
+          {filteredAgents.length === 0 ? (
             <tr>
               <td colSpan="7">
                 <div style={{ padding: 24, textAlign: "center" }}>
-                  <p style={{ color: "#0f8f68", marginBottom: 8 }}>Loading indexed agents</p>
-                  <p className="muted">The indexer is syncing or unavailable. Demo snapshot data is labeled when shown.</p>
+                  <p style={{ color: "#0f8f68", marginBottom: 8 }}>
+                    {agents.length === 0 ? "Loading indexed agents" : "No matching agents"}
+                  </p>
+                  <p className="muted">
+                    {agents.length === 0
+                      ? "The indexer is syncing or unavailable. Demo snapshot data is labeled when shown."
+                      : "Try a different agent name or skill."}
+                  </p>
                 </div>
               </td>
             </tr>
           ) : (
-            agents.map((agent) => (
+            filteredAgents.map((agent) => (
               <tr key={agent.id}>
                 <td><strong className={rankClass(agent.globalRank)}>#{agent.globalRank}</strong></td>
                 <td>

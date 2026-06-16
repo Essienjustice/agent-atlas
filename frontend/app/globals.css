@@ -703,3 +703,100 @@ code {
   }
 
 }
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  .two-col,
+  .job-setup-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 12px 16px;
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: 10px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .toolbar .button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  h1 { font-size: 1.6rem; }
+  h2 { font-size: 1.15rem; }
+
+  .input, textarea.input, .select {
+    font-size: 16px !important;
+  }
+
+  .nav-links {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .button {
+    font-size: 0.875rem;
+    padding: 10px 14px;
+  }
+}
+
+/* Input field visibility */
+.input, textarea.input {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1.5px solid rgba(124, 58, 237, 0.25) !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px;
+  padding: 11px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.input:focus, textarea.input:focus {
+  border-color: var(--purple-primary) !important;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
+
+.input::placeholder, textarea.input::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(124, 58, 237, 0.25);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 11px 14px;
+  cursor: pointer;
+  box-sizing: border-box;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23a78bfa' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.select:focus {
+  border-color: var(--purple-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.12);
+}
