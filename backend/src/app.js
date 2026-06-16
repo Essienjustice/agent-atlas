@@ -229,11 +229,15 @@ function streamIndexedEvents(db) {
     });
     let lastSeen = null;
     const send = () => {
-      const events = recentEvents(db, 20).reverse();
-      for (const event of events) {
-        if (lastSeen && event.sequence <= lastSeen) continue;
-        res.write(`id: ${event.id}\ndata: ${JSON.stringify(event)}\n\n`);
-        lastSeen = event.sequence;
+      try {
+        const events = recentEvents(db, 20).reverse();
+        for (const event of events) {
+          if (lastSeen && event.sequence <= lastSeen) continue;
+          res.write(`id: ${event.id}\ndata: ${JSON.stringify(event)}\n\n`);
+          lastSeen = event.sequence;
+        }
+      } catch (err) {
+        console.error("[events:send] non-fatal read error:", err.message);
       }
     };
     res.write(`data: ${JSON.stringify({ type: "connected", timestamp: new Date().toISOString() })}\n\n`);

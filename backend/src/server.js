@@ -7,6 +7,8 @@ const { assertContractsReachable, isChainMode } = require("./chain");
 
 const PORT = Number(process.env.PORT || 4000);
 
+let _indexerChild = null;
+
 function spawnIndexer() {
   console.log(`[indexer] spawnIndexer called, CHAIN_MODE=${process.env.CHAIN_MODE}`);
   if (!isChainMode()) {
@@ -17,25 +19,52 @@ function spawnIndexer() {
   const indexerPath = path.join(__dirname, "..", "..", "indexer", "src", "indexer.js");
 
   function start() {
+    // Kill any still-running indexer before spawning a new one.
+    if (_indexerChild && !_indexerChild.killed) {
+      console.log("[indexer] killing previous child before restart");
+      _indexerChild.kill("SIGTERM");
+      _indexerChild = null;
+    }
+
     console.log("[indexer] starting child process...");
-    const child = spawn(process.execPath, [indexerPath], {
+    _indexerChild = spawn(process.execPath, [indexerPath], {
       env: process.env,
       stdio: "inherit", // indexer logs appear in Railway alongside backend logs
     });
 
-    child.on("exit", (code, signal) => {
-      console.error(`[indexer] exited (code=${code} signal=${signal}) — restarting in 5s`);
+    _indexerChild.on("exit", (code, signal) => {
+      _indexerChild = null;
+      if (signal === "SIGTERM") {
+        console.log("[indexer] child stopped (SIGTERM) - not restarting");
+        return;
+      }
+      console.error(`[indexer] exited (code=${code} signal=${signal}) - restarting in 5s`);
       setTimeout(start, 5000);
     });
 
-    child.on("error", (err) => {
-      console.error(`[indexer] failed to spawn: ${err.message} — restarting in 5s`);
+    _indexerChild.on("error", (err) => {
+      _indexerChild = null;
+      console.error(`[indexer] failed to spawn: ${err.message} - restarting in 5s`);
       setTimeout(start, 5000);
     });
   }
 
   start();
 }
+
+process.on("SIGTERM", () => {
+  if (_indexerChild && !_indexerChild.killed) {
+    _indexerChild.kill("SIGTERM");
+  }
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  if (_indexerChild && !_indexerChild.killed) {
+    _indexerChild.kill("SIGTERM");
+  }
+  process.exit(0);
+});
 
 async function main() {
   const app = createApp();
