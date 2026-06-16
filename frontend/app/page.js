@@ -3,13 +3,18 @@ import AgentCard from "../components/AgentCard";
 import { AtlasLogo } from "../components/AtlasLogo";
 import { ChainLink } from "../components/ChainLink";
 import LivePanel from "../components/LivePanel";
-import { api } from "../lib/api";
+import { API_URL } from "../lib/api";
 import { addrUrl } from "../lib/chain";
-import { SEED_METRICS } from "../lib/seedData";
 
 export default async function Home({ searchParams }) {
   const q = String(searchParams?.q || "").toLowerCase();
-  const [agents, metrics, jobs] = await Promise.all([api("/leaderboard"), api("/api/metrics", { fallback: SEED_METRICS }), api("/jobs")]);
+  const [agents, metricsResponse, jobs] = await Promise.all([liveApi("/leaderboard", []), liveApi("/api/metrics", null), liveApi("/jobs", [])]);
+  const metrics = {
+    agentsRegistered: metricsResponse?.agentsRegistered ?? agents.length,
+    jobsCreated: metricsResponse?.jobsCreated ?? jobs.length,
+    acceptedSubmissions: metricsResponse?.acceptedSubmissions ?? jobs.filter((job) => job.status === "COMPLETED").length,
+    scoreUpdates: metricsResponse?.scoreUpdates ?? 0
+  };
   const filtered = agents.filter((agent) => !q || agent.name.toLowerCase().includes(q) || agent.skills.join(" ").toLowerCase().includes(q));
   const topAgents = filtered.slice(0, 3);
   const agentById = new Map(agents.map((agent) => [Number(agent.id), agent]));
@@ -80,7 +85,7 @@ export default async function Home({ searchParams }) {
           {topAgents.length === 0 ? (
             <div className="empty-state" style={{ gridColumn: "1 / -1" }}>
               <p>Loading indexed agents</p>
-              <span>Indexer data is syncing or unavailable. Demo snapshot data is labeled when shown.</span>
+              <span>Indexer data is syncing or unavailable. Live agents appear here after the API responds.</span>
             </div>
           ) : (
             topAgents.map((agent) => <AgentCard agent={agent} key={agent.id} />)
@@ -109,7 +114,7 @@ export default async function Home({ searchParams }) {
                       {job.source !== "demo" && job.completedTransactionHash ? (
                         <ChainLink value={job.completedTransactionHash} type="tx" />
                       ) : (
-                        <span className="muted">{job.source === "demo" ? "Demo Snapshot" : "Indexed job"}</span>
+                        <span className="muted">Indexed job</span>
                       )}
                     </td>
                   </tr>
@@ -214,4 +219,17 @@ function MetricCard({ label, value }) {
       <div className="metric-label">{label}</div>
     </div>
   );
+}
+
+async function liveApi(path, fallback) {
+  try {
+    const response = await fetch(`${API_URL}${path}`, {
+      cache: "no-store",
+      headers: { "Content-Type": "application/json" }
+    });
+    if (!response.ok) return fallback;
+    return response.json();
+  } catch {
+    return fallback;
+  }
 }

@@ -39,6 +39,7 @@ export default function Nav() {
       <nav className={`nav ${mobileOpen ? "open" : ""}`}>
         <Link href="/protocol" onClick={closeMenu}>Try It</Link>
         <a href="https://agent-atlas-site.vercel.app" target="_blank" rel="noopener noreferrer" onClick={closeMenu}>About</a>
+        <Link href="/profile" onClick={closeMenu}>Profile</Link>
         <Link href="/leaderboard" onClick={closeMenu}>Leaderboard</Link>
         <Link href="/jobs" onClick={closeMenu}>Job Board</Link>
         <Link href="/live" onClick={closeMenu}>Live Activity</Link>

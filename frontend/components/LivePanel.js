@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_URL, api } from "../lib/api";
+import { API_URL } from "../lib/api";
 import { ChainLink } from "./ChainLink";
 import { TimeAgo } from "./TimeAgo";
-import { SEED_EVENTS } from "../lib/seedData";
 
 export default function LivePanel({ compact = false }) {
-  const [events, setEvents] = useState(SEED_EVENTS.slice(0, compact ? 6 : 30));
+  const [events, setEvents] = useState([]);
   const [connected, setConnected] = useState(false);
-  const demoMode = events.some(isDemoEvent) || !connected;
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let source;
@@ -27,10 +26,15 @@ export default function LivePanel({ compact = false }) {
 
     async function hydrate() {
       try {
-        mergeEvents(await api("/events/recent"));
+        const response = await fetch(`${API_URL}/events/recent`, { cache: "no-store" });
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+        const data = await response.json();
+        mergeEvents(Array.isArray(data) ? data.filter((event) => !isDemoEvent(event)) : []);
+        setFailed(false);
       } catch (error) {
-        console.warn("Live event feed unavailable; using local demo snapshot.", error);
-        mergeEvents(SEED_EVENTS);
+        console.warn("Live event feed unavailable.", error);
+        setEvents([]);
+        setFailed(true);
         setConnected(false);
       }
     }
@@ -42,7 +46,10 @@ export default function LivePanel({ compact = false }) {
       source.onmessage = (message) => {
         const event = JSON.parse(message.data);
         if (event.type === "connected") return;
-        mergeEvents([event]);
+        if (!isDemoEvent(event)) {
+          mergeEvents([event]);
+          setFailed(false);
+        }
       };
       source.onerror = () => {
         setConnected(false);
@@ -65,26 +72,22 @@ export default function LivePanel({ compact = false }) {
   return (
     <section className="card">
       <h2>Submission Transparency</h2>
-      <p className="muted">{connected ? "Live indexer stream connected." : "Indexer unavailable. Live protocol data unavailable."}</p>
-      {demoMode && (
-        <div className="demo-banner">
-          <strong>Demo Snapshot</strong>
-          <span>Local demo data is visible until the live indexer API responds. No Mantle transaction links are shown for demo records.</span>
-        </div>
-      )}
+      <p className="muted">{connected ? "Live indexer stream connected." : "Live indexer stream connecting..."}</p>
       <div className="timeline">
         {events.length === 0 && (
           <div className="event">
-            <strong>Demo mode - Connect indexer for live events</strong>
-            <div className="muted">Seed events are shown until the live indexer stream is available.</div>
+            <strong>Live indexer stream connecting...</strong>
+            <div className="muted">
+              {failed ? "Live protocol data unavailable. Real-time Mantle events appear here as they are indexed." : "Real-time Mantle events appear here as they are indexed."}
+            </div>
           </div>
         )}
         {events.map((event) => {
           const isDemo = isDemoEvent(event);
+          if (isDemo) return null;
           return (
           <div className={`event event-row ${event.type}`} key={event.id || event.timestamp}>
             <strong className={`event-badge ${event.type}`}>{event.type}</strong>
-            {isDemo && <span className="badge demo">Demo Snapshot</span>}
             {event.agent && <div className="muted">{event.agent}</div>}
             <div><TimeAgo ts={event.timestamp} /></div>
             {["ProofVerified", "ProofFailed"].includes(event.type) && (
