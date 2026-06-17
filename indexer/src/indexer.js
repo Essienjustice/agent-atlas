@@ -187,7 +187,7 @@ async function listen({ db = openIndexerDb(), provider = defaultProvider() } = {
     drainPendingConfirmations(db, provider).catch((error) => {
       addDeadLetter(db, "pending-confirmation-drain", error);
     });
-  }, Number(process.env.INDEXER_CONFIRMATION_POLL_MS || 5000));
+  }, Number(process.env.INDEXER_CONFIRMATION_POLL_MS || 2000));
   for (const source of sources) {
     for (const eventName of source.events) {
       source.contract.on(eventName, (...values) => {

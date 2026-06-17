@@ -38,6 +38,7 @@ export default function ProtocolPage() {
   const [confirmJobId, setConfirmJobId] = useState("");
   const [confirmAgentId, setConfirmAgentId] = useState("");
   const [statuses, setStatuses] = useState({});
+  const [session, setSession] = useState({});
 
   const proofHash = useMemo(() => {
     if (!workText.trim()) return "";
@@ -158,10 +159,23 @@ export default function ProtocolPage() {
 
       setStepStatus(step, {
         error: "",
-        message: "Transaction submitted. It will appear in indexed state after confirmation.",
+        message: "Transaction submitted. Waiting for on-chain confirmation...",
         txHash: hash
       });
-      return hash;
+      const receipt = await waitForReceipt(hash, provider);
+      if (!receipt) throw new Error("Transaction receipt was not available yet. Check Mantlescan for confirmation.");
+      if (receipt.status && receipt.status !== "0x1" && receipt.status !== 1) {
+        throw new Error("Transaction reverted on-chain.");
+      }
+      setStepStatus(step, {
+        error: "",
+        message: "Confirmed on-chain - syncing to leaderboard...",
+        txHash: hash,
+        syncState: "syncing",
+        blockNumber: Number(receipt.blockNumber)
+      });
+      syncStepWhenIndexed(step, Number(receipt.blockNumber));
+      return { hash, receipt, from };
     } catch (error) {
       setStepStatus(step, { error: normalizeError(error), message: "" });
       return null;
@@ -176,16 +190,24 @@ export default function ProtocolPage() {
       setStepStatus("register", { error: "Agent name and specialty are required.", message: "" });
       return;
     }
-    const hash = await sendProtocolAction("register", ACTIONS.registerAgent, {
+    const result = await sendProtocolAction("register", ACTIONS.registerAgent, {
       name: agentName.trim(),
       skills: agentSkill.trim(),
       externalIdentifier: `agent-atlas:${agentName.trim().toLowerCase().replace(/\s+/g, "-")}`
     });
-    if (hash) {
+    if (result) {
+      setSession((current) => ({
+        ...current,
+        agentRegistered: true,
+        agentAddress: result.from,
+        agentName: agentName.trim()
+      }));
       setStepStatus("register", {
         error: "",
-        message: "Registration submitted. Your agent will appear on the leaderboard after indexing.",
-        txHash: hash
+        message: `Confirmed on-chain - syncing to leaderboard... Agent "${agentName.trim()}" registered from ${shortAddress(result.from)}.`,
+        txHash: result.hash,
+        syncState: "syncing",
+        blockNumber: Number(result.receipt.blockNumber)
       });
     }
   }
@@ -196,19 +218,27 @@ export default function ProtocolPage() {
       setStepStatus("createJob", { error: "Job description is required.", message: "" });
       return;
     }
-    const hash = await sendProtocolAction("createJob", ACTIONS.createJob, {
+    const result = await sendProtocolAction("createJob", ACTIONS.createJob, {
       description: jobDescription.trim(),
       reward: 0
     });
-    if (hash) {
-      const receipt = await waitForReceipt(hash).catch(() => null);
+    if (result) {
+      const receipt = result.receipt;
       const jobId = receipt ? jobIdFromReceipt(receipt) : null;
+      setSession((current) => ({
+        ...current,
+        jobCreated: true,
+        jobId,
+        jobDescription: jobDescription.trim()
+      }));
       setStepStatus("createJob", {
         error: "",
         message: jobId
-          ? `Job #${jobId} created. Share this job ID with an agent to accept it.`
-          : "Job submitted. The job ID will appear after indexing.",
-        txHash: hash
+          ? `Confirmed on-chain - syncing to leaderboard... Job #${jobId} created.`
+          : "Confirmed on-chain - syncing to leaderboard... Job ID will appear after indexing.",
+        txHash: result.hash,
+        syncState: "syncing",
+        blockNumber: Number(receipt.blockNumber)
       });
       if (jobId) {
         setAcceptJobId(String(jobId));
@@ -224,19 +254,27 @@ export default function ProtocolPage() {
       setStepStatus("acceptJob", { error: "Job ID and agent ID are required.", message: "" });
       return;
     }
-    const hash = await sendProtocolAction("acceptJob", ACTIONS.acceptJob, {
+    const result = await sendProtocolAction("acceptJob", ACTIONS.acceptJob, {
       jobId: Number(acceptJobId),
       agentId: Number(acceptAgentId)
     });
-    if (hash) {
+    if (result) {
       setProofJobId(acceptJobId);
       setProofAgentId(acceptAgentId);
       setConfirmJobId(acceptJobId);
       setConfirmAgentId(acceptAgentId);
+      setSession((current) => ({
+        ...current,
+        jobAccepted: true,
+        acceptedJobId: acceptJobId,
+        acceptedAgentId: acceptAgentId
+      }));
       setStepStatus("acceptJob", {
         error: "",
-        message: "Job accepted. Proceed to Step 4 to submit proof.",
-        txHash: hash
+        message: `Confirmed on-chain - syncing to leaderboard... Job #${acceptJobId} accepted by agent #${acceptAgentId}.`,
+        txHash: result.hash,
+        syncState: "syncing",
+        blockNumber: Number(result.receipt.blockNumber)
       });
     }
   }
@@ -248,18 +286,27 @@ export default function ProtocolPage() {
       return;
     }
     const resultHash = await sha256Hex(workText);
-    const hash = await sendProtocolAction("submitProof", ACTIONS.submitProof, {
+    const result = await sendProtocolAction("submitProof", ACTIONS.submitProof, {
       jobId: Number(proofJobId),
       agentId: Number(proofAgentId),
       resultHash
     });
-    if (hash) {
+    if (result) {
       setConfirmJobId(proofJobId);
       setConfirmAgentId(proofAgentId);
+      setSession((current) => ({
+        ...current,
+        proofSubmitted: true,
+        proofJobId,
+        proofAgentId,
+        resultHash
+      }));
       setStepStatus("submitProof", {
         error: "",
-        message: "Proof submitted. Ask the job creator to accept it in Step 5.",
-        txHash: hash
+        message: `Confirmed on-chain - syncing to leaderboard... Proof submitted for job #${proofJobId}.`,
+        txHash: result.hash,
+        syncState: "syncing",
+        blockNumber: Number(result.receipt.blockNumber)
       });
     }
   }
@@ -270,15 +317,45 @@ export default function ProtocolPage() {
       setStepStatus("acceptProof", { error: "Job ID and agent ID are required.", message: "" });
       return;
     }
-    const hash = await sendProtocolAction("acceptProof", ACTIONS.acceptProof, {
+    const result = await sendProtocolAction("acceptProof", ACTIONS.acceptProof, {
       jobId: Number(confirmJobId),
       agentId: Number(confirmAgentId)
     });
-    if (hash) {
+    if (result) {
+      setSession((current) => ({
+        ...current,
+        proofAccepted: true,
+        confirmedJobId: confirmJobId,
+        confirmedAgentId: confirmAgentId
+      }));
       setStepStatus("acceptProof", {
         error: "",
-        message: "Proof accepted. The agent's Atlas Score will update after indexing.",
-        txHash: hash
+        message: `Confirmed on-chain - syncing to leaderboard... Proof accepted for job #${confirmJobId}.`,
+        txHash: result.hash,
+        syncState: "syncing",
+        blockNumber: Number(result.receipt.blockNumber)
+      });
+    }
+  }
+
+  async function syncStepWhenIndexed(step, blockNumber) {
+    const slowTimer = setTimeout(() => {
+      setStepStatus(step, {
+        message: "Confirmed on-chain - indexer syncing",
+        syncState: "pending"
+      });
+    }, 15000);
+    const indexed = await waitForIndexerSync(blockNumber);
+    clearTimeout(slowTimer);
+    if (indexed) {
+      setStepStatus(step, {
+        message: "Confirmed on-chain - indexed",
+        syncState: "indexed"
+      });
+    } else {
+      setStepStatus(step, {
+        message: "Confirmed on-chain - indexer syncing",
+        syncState: "pending"
       });
     }
   }
@@ -301,6 +378,18 @@ export default function ProtocolPage() {
           </div>
           <WalletState account={account} isMantle={isMantle} walletName={walletName} switchNetwork={switchNetwork} />
         </div>
+        {Object.keys(session).length > 0 && (
+          <section className="card" style={{ marginTop: 18 }}>
+            <h2>Current Session</h2>
+            <div className="two-col">
+              {session.agentRegistered && <p className="muted">Agent registered: {session.agentName} ({shortAddress(session.agentAddress)})</p>}
+              {session.jobCreated && <p className="muted">Job created: {session.jobId ? `#${session.jobId}` : "pending indexed ID"}</p>}
+              {session.jobAccepted && <p className="muted">Job accepted: #{session.acceptedJobId} by agent #{session.acceptedAgentId}</p>}
+              {session.proofSubmitted && <p className="muted">Proof submitted: job #{session.proofJobId}</p>}
+              {session.proofAccepted && <p className="muted">Submission accepted: job #{session.confirmedJobId}</p>}
+            </div>
+          </section>
+        )}
 
         <StepCard
           step="1"
@@ -415,6 +504,11 @@ function StepStatus({ status }) {
     <div className="event" style={{ marginTop: 12 }}>
       {status.error && <p className="muted">{status.error}</p>}
       {status.message && <p className="muted">{status.message}</p>}
+      {status.syncState && (
+        <p className="muted" style={{ color: status.syncState === "indexed" ? "var(--green-verified)" : "var(--text-secondary)" }}>
+          {status.syncState === "indexed" ? "Confirmed on-chain - indexed" : status.syncState === "pending" ? "Confirmed on-chain - indexer syncing" : "Confirmed on-chain - syncing to leaderboard..."}
+        </p>
+      )}
       {status.txHash && <p className="muted">Tx: <ChainLink value={status.txHash} type="tx" /></p>}
     </div>
   );
@@ -426,8 +520,7 @@ async function sha256Hex(value) {
   return `0x${Array.from(new Uint8Array(digest)).map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
-async function waitForReceipt(hash) {
-  const provider = getPreferredProvider();
+async function waitForReceipt(hash, provider = getPreferredProvider()) {
   if (!provider) return null;
   for (let attempt = 0; attempt < 12; attempt += 1) {
     const receipt = await provider.request({
@@ -438,6 +531,23 @@ async function waitForReceipt(hash) {
     await new Promise((resolve) => setTimeout(resolve, 2500));
   }
   return null;
+}
+
+async function waitForIndexerSync(txBlockNumber) {
+  const maxAttempts = 15;
+  for (let i = 0; i < maxAttempts; i += 1) {
+    try {
+      const res = await fetch(`${API_URL}/api/sync-status`, { cache: "no-store" });
+      const data = await res.json();
+      if (Number(data.lastIndexedBlock || 0) >= Number(txBlockNumber)) {
+        return true;
+      }
+    } catch {
+      // Keep waiting; transaction confirmation is already shown from the receipt.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+  return false;
 }
 
 function jobIdFromReceipt(receipt) {

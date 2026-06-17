@@ -34,7 +34,7 @@ export default function LeaderboardClient({ initialAgents, skill = "" }) {
     let source;
     let reconnectTimer;
     let closed = false;
-    const polling = setInterval(refresh, 5000);
+    const polling = setInterval(refresh, 4000);
 
     function connect() {
       if (!API_URL) return;

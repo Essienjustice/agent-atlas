@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const crypto = require("crypto");
+const { ethers } = require("ethers");
 const { listDeadLetters, openIndexerDb } = require("../../indexer/src/store");
 const {
   getAgent,
@@ -17,6 +18,9 @@ const {
   recentEvents
 } = require("../../indexer/src/read-model");
 const { acceptJobOnChain, buildUnsignedTransaction, createJobOnChain, isChainMode, markJobFailedOnChain, submitProofOnChain } = require("./chain");
+
+const DEFAULT_RPC_URL = "https://rpc.sepolia.mantle.xyz";
+let chainHeadCache = { value: null, fetchedAt: 0 };
 
 function createApp(options = {}) {
   const app = express();
@@ -57,6 +61,21 @@ function createApp(options = {}) {
         acceptedSubmissions: 0,
         scoreUpdates: 0,
         eventsIndexed: 0
+      });
+    }
+  });
+  app.get("/api/sync-status", async (req, res) => {
+    try {
+      return res.status(200).json(await syncStatusSnapshot(db));
+    } catch (error) {
+      const status = indexerStatus(db);
+      return res.status(200).json({
+        ok: false,
+        source: "indexer-sqlite",
+        error: error.message,
+        lastIndexedBlock: status.checkpoints.lastBlock || 0,
+        lastIndexedAt: latestIndexedAt(db),
+        chainHeadBlock: chainHeadCache.value || 0
       });
     }
   });
@@ -202,6 +221,31 @@ function metricsSnapshot(db) {
     eventsIndexed: snapshot.events,
     indexed: snapshot
   };
+}
+
+async function syncStatusSnapshot(db) {
+  const status = indexerStatus(db);
+  return {
+    ok: true,
+    source: "indexer-sqlite",
+    lastIndexedBlock: status.checkpoints.lastBlock || 0,
+    lastIndexedAt: latestIndexedAt(db),
+    chainHeadBlock: await cachedChainHeadBlock()
+  };
+}
+
+function latestIndexedAt(db) {
+  const row = db.prepare("SELECT MAX(first_seen_at) AS lastIndexedAt FROM blocks").get();
+  return row?.lastIndexedAt || null;
+}
+
+async function cachedChainHeadBlock() {
+  const now = Date.now();
+  if (chainHeadCache.value && now - chainHeadCache.fetchedAt < 5000) return chainHeadCache.value;
+  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL || DEFAULT_RPC_URL);
+  const value = await provider.getBlockNumber();
+  chainHeadCache = { value, fetchedAt: now };
+  return value;
 }
 
 function requireChainMode(req, res, next) {
